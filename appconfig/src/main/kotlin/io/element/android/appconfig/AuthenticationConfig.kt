@@ -9,6 +9,7 @@
 package io.element.android.appconfig
 
 object AuthenticationConfig {
+    const val DEFAULT_ACCOUNT_PROVIDER_URL = "https://8.163.2.191"
     const val MATRIX_ORG_URL = "https://matrix.org"
 
     /**

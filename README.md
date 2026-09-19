@@ -25,6 +25,7 @@ Compared to the previous-generation [Element Classic](https://github.com/element
 * [Minimum SDK version](#minimum-sdk-version)
 * [Contributing](#contributing)
 * [Build instructions](#build-instructions)
+* [Local deployment](#local-deployment)
 * [Support](#support)
 * [Copyright and License](#copyright-and-license)
 
@@ -93,6 +94,12 @@ Just clone the project and open it in Android Studio. Make sure to select the
 
 To build against a local copy of the Rust SDK, see the [Developer
 onboarding](docs/_developer_onboarding.md#building-the-sdk-locally) instructions.
+
+## Local deployment
+
+See [LOCAL_DEPLOYMENT.md](LOCAL_DEPLOYMENT.md) for the reproducible physical
+device build, install, verification, and push notification limitations used by
+this checkout.
 
 ## Support
 
