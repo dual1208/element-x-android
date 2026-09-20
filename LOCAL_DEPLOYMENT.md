@@ -100,6 +100,13 @@ metadata before any later setup attempt. No identity-reset or
 change-recovery-key action was invoked, and the application was not uninstalled
 or cleared.
 
+A subsequent read-only server check found the `api30` backup still at version
+1 with ETag 2 and two sessions, and its cross-signing stream IDs still at
+2/3/4. Both task accounts had zero `m.secret_storage.default_key` rows and zero
+`m.secret_storage.key.*` rows. No persisted secret-storage or backup change was
+detected. Because pre-attempt secret-storage fingerprints were not recorded,
+this evidence cannot exclude transient client-side work.
+
 Ignored verification evidence is under `build/codex-logs/`, including
 `build-gplay-debug.log`, `install-managed-family.log`,
 `launch-managed-family.log`, the APK signing reports, and the non-secret
