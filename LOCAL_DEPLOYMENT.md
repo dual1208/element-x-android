@@ -88,14 +88,17 @@ The APK was installed on the physical arm64 Android 11 device with
 existing account in `io.element.android.x.MainActivity`. The installed package
 reported version `26.09.2-family.1` and version code `202609022`. The managed
 crypto gate presented the existing supervised **Get recovery key** setup before
-opening Family. During verification, one automated tap was attempted on the
-**Generate your recovery key** control. After 30 seconds the screen still
-showed the same control, no recovery key was visible, and no local key file had
-been written. The control invokes `enableRecovery`, so the unchanged client UI
-alone does not prove that server-side recovery state was untouched; recheck
-the account recovery metadata before any later setup attempt. No identity-reset
-or change-recovery-key action was invoked, and the application was not
-uninstalled or cleared.
+opening Family. During verification, one automated coordinate tap
+(`500,1060`) was attempted. Semantic bounds were not recorded before the tap;
+scaled screenshot evidence places that point near or just above the
+**Generate your recovery key** control, so whether its event was invoked is
+unknown. After 30 seconds the screen still showed the same control, no recovery
+key was visible, and no local key file had been written. If invoked, the
+control calls `enableRecovery`, so the unchanged client UI alone does not prove
+that server-side recovery state was untouched; recheck the account recovery
+metadata before any later setup attempt. No identity-reset or
+change-recovery-key action was invoked, and the application was not uninstalled
+or cleared.
 
 Ignored verification evidence is under `build/codex-logs/`, including
 `build-gplay-debug.log`, `install-managed-family.log`,
