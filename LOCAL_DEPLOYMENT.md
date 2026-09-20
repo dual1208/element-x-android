@@ -36,9 +36,10 @@ Rust SDK build.
   `/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home`.
 - Android SDK Platform 37 and a working `just` installation.
 
-The Gradle recipes use at most two workers and a 3 GiB heap so they are safe to
-run on the development Mac. Build logs and device evidence are written under
-the ignored `build/codex-logs/` directory.
+The Gradle recipes use one worker, macOS background scheduling at nice level
+15, and a 3 GiB heap to reduce contention on the development Mac. Build logs
+and device evidence are written under the ignored `build/codex-logs/`
+directory.
 
 ## Commands
 
