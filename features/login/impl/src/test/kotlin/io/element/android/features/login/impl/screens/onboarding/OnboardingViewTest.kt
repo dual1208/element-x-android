@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runAndroidComposeUiTest
 import com.google.testing.junit.testparameterinjector.KotlinTestParameters.namedTestValues
 import com.google.testing.junit.testparameterinjector.TestParameter
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.login.impl.R
 import io.element.android.features.login.impl.login.LoginMode
 import io.element.android.features.login.impl.login.aLoginModeState
@@ -141,6 +142,22 @@ class OnboardingViewTest : RobolectricTestParameter() {
         val buttonText = activity!!.getString(R.string.screen_onboarding_sign_in_to, "element.io")
         onNodeWithText(buttonText).performClick()
         eventSink.assertSingle(OnBoardingEvent.OnSignIn("element.io"))
+    }
+
+    @Test
+    fun `when sign in to managed account provider - continue hides the server address and emits the expected event`() = runAndroidComposeUiTest {
+        val eventSink = EventsRecorder<OnBoardingEvent>()
+        setOnboardingView(
+            state = anOnBoardingState(
+                defaultAccountProvider = ManagedFamilyConfig.HOMESERVER_URL,
+                eventSink = eventSink,
+            ),
+        )
+
+        val serverButtonText = activity!!.getString(R.string.screen_onboarding_sign_in_to, ManagedFamilyConfig.HOMESERVER_URL)
+        onNodeWithText(serverButtonText).assertDoesNotExist()
+        clickOn(CommonStrings.action_continue)
+        eventSink.assertSingle(OnBoardingEvent.OnSignIn(ManagedFamilyConfig.HOMESERVER_URL))
     }
 
     @Test

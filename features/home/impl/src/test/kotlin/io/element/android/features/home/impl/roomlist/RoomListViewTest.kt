@@ -52,8 +52,22 @@ class RoomListViewTest : RobolectricTest() {
 
             assertNodeWithTextIsDisplayed(R.string.managed_family_setup_needs_help)
             assertNoNodeWithText(CommonStrings.action_create_room)
-            clickOnSettings()
+            clickOn(R.string.managed_family_open_settings)
         }
+    }
+
+    @Config(qualifiers = "zh")
+    @Test
+    fun `managed family repair view uses concise Simplified Chinese copy`() = runAndroidComposeUiTest {
+        setRoomListView(
+            state = aRoomListState(),
+            isManagedFamilyMode = true,
+        )
+
+        onNodeWithText("家人聊天").assertExists()
+        onNodeWithText("完成首次设置").assertExists()
+        onNodeWithText("请让帮你安装的家人陪你完成验证和聊天恢复。").assertExists()
+        onNodeWithText("打开设置").assertExists()
     }
 
     @Config(qualifiers = "h1024dp")
@@ -310,9 +324,4 @@ class RoomListViewTest : RobolectricTest() {
             isManagedFamilyMode = isManagedFamilyMode,
         )
     }
-}
-
-private fun AndroidComposeUiTest<ComponentActivity>.clickOnSettings() {
-    val settings = activity!!.getString(CommonStrings.common_settings)
-    onNodeWithContentDescription(settings).performClick()
 }

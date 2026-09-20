@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.login.impl.R
@@ -302,8 +303,13 @@ private fun OnBoardingButtons(
                     .testTag(TestTags.onBoardingSignIn)
             )
         } else {
+            val signInText = if (ManagedFamilyConfig.ENABLED && defaultAccountProvider == ManagedFamilyConfig.HOMESERVER_URL) {
+                stringResource(id = CommonStrings.action_continue)
+            } else {
+                stringResource(id = R.string.screen_onboarding_sign_in_to, defaultAccountProvider)
+            }
             Button(
-                text = stringResource(id = R.string.screen_onboarding_sign_in_to, defaultAccountProvider),
+                text = signInText,
                 showProgress = isLoading,
                 onClick = {
                     state.eventSink(OnBoardingEvent.OnSignIn(defaultAccountProvider))

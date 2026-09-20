@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2026 Element Creations Ltd.
+  ~
+  ~ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
+  ~ Please see LICENSE files in the repository root for full details.
+  -->
+
+<resources>
+    <string name="managed_family_conversation">家人聊天</string>
+    <string name="managed_family_setup_needs_help">完成首次设置</string>
+    <string name="managed_family_setup_help_message">请让帮你安装的家人陪你完成验证和聊天恢复。</string>
+    <string name="managed_family_open_settings">打开设置</string>
+</resources>

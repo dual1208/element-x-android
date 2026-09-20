@@ -69,6 +69,7 @@ import io.element.android.features.home.impl.spaces.HomeSpacesView
 import io.element.android.libraries.androidutils.throttler.FirstThrottler
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
+import io.element.android.libraries.designsystem.theme.components.Button
 import io.element.android.libraries.designsystem.theme.components.FloatingActionButton
 import io.element.android.libraries.designsystem.theme.components.HorizontalFloatingToolbar
 import io.element.android.libraries.designsystem.theme.components.HorizontalFloatingToolbarItem
@@ -213,6 +214,13 @@ private fun ManagedFamilyHomeView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
+                )
+                Button(
+                    text = stringResource(R.string.managed_family_open_settings),
+                    onClick = onSettingsClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp),
                 )
             }
         },
