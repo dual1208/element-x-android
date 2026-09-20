@@ -59,8 +59,10 @@ The verified arm64 artifact is
 `app/build/intermediates/apk/gplay/debug/app-gplay-arm64-v8a-debug.apk`. It installs
 as `io.element.android.x.debug`, keeping its data and identity separate from
 the release package `io.element.android.x`. The install recipe uses
-`adb install -r -t` and never uninstalls the existing application. The `-t`
-flag is required because this debug APK is marked `testOnly`.
+`adb install -r` and never uninstalls the existing application. The targeted
+ABI build explicitly sets `android.injected.testOnly=false`; the resulting
+manifest has no `android:testOnly` attribute and can be installed normally
+from a browser or package installer.
 
 This fork build reports version `26.09.2-family.2`. Both verified APK manifests
 use version code `202609030`, so the arm64 APK upgrades the previously installed
@@ -77,19 +79,20 @@ sync and MAS login through `https://8.163.2.191/auth/` on Android 11 (API 30).
 
 ## Physical verification
 
-The family.2 arm64-only cached build completed successfully in 4 minutes 58
-seconds with one Gradle worker and the background resource policy. The full
-multi-output packaging attempt had exposed an AGP 9.3.1 `ApkFlinger` signing
-deadlock, so the reproducible build recipe uses AGP's target-ABI properties to
-package only the physical device's `arm64-v8a` output. No clean or test rerun is
-needed for that packaging retry.
+The distributable family.2 arm64-only cached build completed successfully in 5
+minutes 25 seconds with one Gradle worker and the background resource policy.
+The full multi-output packaging attempt had exposed an AGP 9.3.1 `ApkFlinger`
+signing deadlock, so the reproducible build recipe uses AGP's target-ABI
+properties to package only the physical device's `arm64-v8a` output. It also
+overrides AGP's target-ABI `testOnly` default so the output remains
+distributable. No clean or test rerun was needed for that packaging retry.
 
 The final ignored artifact staging directory is
 `build/codex-artifacts/family2/`. It contains binary-truth combined
 `output-metadata.json` plus these verified APKs:
 
-- `app-gplay-arm64-v8a-debug.apk`: 161,799,942 bytes, SHA-256
-  `55db951e2561d37b7079d8fac0fa0e9d817c95c51e1889636cfbfcadfca514b9`.
+- `app-gplay-arm64-v8a-debug.apk`: 161,917,852 bytes, SHA-256
+  `460f012aaf48a09d22286fdb1d554f0a08aeb418a52fca7501935dddaf13abf5`.
 - `app-gplay-universal-debug.apk`: 410,023,078 bytes, SHA-256
   `738b2138ad524ca212074bad0df50bb18453cd1bce8d553fd89f7ee9f574b030`.
 
@@ -99,16 +102,18 @@ ZIP and 16 KiB page alignment, and a valid APK Signature Scheme v2 signature.
 Their signing-certificate SHA-256 is
 `b0b051dc565c812fe17f6f3e945b4d79047123ab0da61286769eb2949197130e`,
 matching the previously installed build. The arm64 APK contains only
-`arm64-v8a` native libraries.
+`arm64-v8a` native libraries. Both manifests omit `android:testOnly`.
 
 AGP's arm64-only `output-metadata.json` reported split code `202609032`, while
 both `aapt dump badging` and the binary Android manifest report `202609030`.
 The combined deployment metadata therefore records the verified binary value
 `202609030`; the unmodified Gradle metadata is retained at
-`build/codex-logs/output-metadata-family2-arm64-gradle.json` for diagnosis.
+`build/codex-logs/output-metadata-family2-arm64-distributable-gradle.json` for
+diagnosis.
 
 The family.2 arm64 APK was installed in place on the physical OnePlus 6,
-Android 11 (API 30), with `adb install -r -t`. The installed package reports
+Android 11 (API 30), with ordinary `adb install -r` and no test-package flag.
+The installed package reports
 version `26.09.2-family.2` and version code `202609030`. A cold launch completed
 successfully and left `io.element.android.x.MainActivity` in the foreground.
 No UI tap, screenshot, account-data inspection, recovery action, logout,

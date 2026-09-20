@@ -26,7 +26,7 @@ test:
 
 build:
     mkdir -p {{logs}}
-    {{gradle}} -Pandroid.injected.build.abi=arm64-v8a -Pandroid.buildOnlyTargetAbi=true :app:assembleGplayDebug 2>&1 | tee {{logs}}/build-gplay-debug.log
+    {{gradle}} -Pandroid.injected.build.abi=arm64-v8a -Pandroid.buildOnlyTargetAbi=true -Pandroid.injected.testOnly=false :app:assembleGplayDebug 2>&1 | tee {{logs}}/build-gplay-debug.log
 
 check: lint test
 
@@ -34,7 +34,7 @@ ci: check build
 
 install: device build
     test -f {{apk}}
-    adb -s "{{serial}}" install -r -t {{apk}} 2>&1 | tee {{logs}}/install.log
+    adb -s "{{serial}}" install -r {{apk}} 2>&1 | tee {{logs}}/install.log
 
 launch: device
     adb -s "{{serial}}" shell am force-stop {{package}}
