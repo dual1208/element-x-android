@@ -238,7 +238,7 @@ class OnBoardingPresenterTest {
             skipItems(1)
             awaitItem().also {
                 assertThat(it.defaultAccountProvider).isEqualTo(ACCOUNT_PROVIDER_FROM_CONFIG)
-                assertThat(it.canLoginWithQrCode).isTrue()
+                assertThat(it.canLoginWithQrCode).isFalse()
                 assertThat(it.canCreateAccount).isFalse()
             }
         }

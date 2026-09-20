@@ -22,7 +22,7 @@ lint:
 
 test:
     mkdir -p {{logs}}
-    {{gradle}} :features:login:impl:testDebugUnitTest 2>&1 | tee {{logs}}/test-login.log
+    {{gradle}} :appnav:testDebugUnitTest :features:enterprise:impl-foss:testDebugUnitTest :features:ftue:impl:testDebugUnitTest :features:home:impl:testDebugUnitTest :features:invite:impl:testDebugUnitTest :features:login:impl:testDebugUnitTest :features:securebackup:impl:testDebugUnitTest 2>&1 | tee {{logs}}/test-managed-family.log
 
 build:
     mkdir -p {{logs}}

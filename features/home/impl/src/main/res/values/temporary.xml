@@ -14,4 +14,7 @@
     <string name="search_section_messages">Messages</string>
     <string name="search_no_results_title">No results</string>
     <string name="search_no_results_subtitle">There are no results for “%1$s”. Try a new search term.</string>
+    <string name="managed_family_conversation">Family</string>
+    <string name="managed_family_setup_needs_help">Setup needs help</string>
+    <string name="managed_family_setup_help_message">Open Settings to check this account’s verification, recovery, and connection.</string>
 </resources>

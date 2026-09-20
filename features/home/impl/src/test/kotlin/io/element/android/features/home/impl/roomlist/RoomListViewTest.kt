@@ -30,6 +30,8 @@ import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.tests.testutils.EnsureNeverCalled
 import io.element.android.tests.testutils.EnsureNeverCalledWithParam
 import io.element.android.tests.testutils.EventsRecorder
+import io.element.android.tests.testutils.assertNoNodeWithText
+import io.element.android.tests.testutils.assertNodeWithTextIsDisplayed
 import io.element.android.tests.testutils.clickOn
 import io.element.android.tests.testutils.ensureCalledOnce
 import io.element.android.tests.testutils.ensureCalledOnceWithParam
@@ -39,6 +41,21 @@ import org.junit.Test
 import org.robolectric.annotation.Config
 
 class RoomListViewTest : RobolectricTest() {
+    @Test
+    fun `managed family view hides room navigation and keeps settings available`() = runAndroidComposeUiTest {
+        ensureCalledOnce { settingsCallback ->
+            setRoomListView(
+                state = aRoomListState(),
+                onSettingsClick = settingsCallback,
+                isManagedFamilyMode = true,
+            )
+
+            assertNodeWithTextIsDisplayed(R.string.managed_family_setup_needs_help)
+            assertNoNodeWithText(CommonStrings.action_create_room)
+            clickOnSettings()
+        }
+    }
+
     @Config(qualifiers = "h1024dp")
     @Test
     fun `displaying the view automatically sends a couple of UpdateVisibleRangeEvents`() = runAndroidComposeUiTest {
@@ -261,7 +278,7 @@ class RoomListViewTest : RobolectricTest() {
     }
 }
 
-private fun AndroidComposeUiTest<ComponentActivity>.setRoomListView(
+    private fun AndroidComposeUiTest<ComponentActivity>.setRoomListView(
     state: RoomListState,
     onRoomClick: (RoomId) -> Unit = EnsureNeverCalledWithParam(),
     onSettingsClick: () -> Unit = EnsureNeverCalled(),
@@ -273,6 +290,7 @@ private fun AndroidComposeUiTest<ComponentActivity>.setRoomListView(
     onMenuActionClick: (RoomListMenuAction) -> Unit = EnsureNeverCalledWithParam(),
     onReportRoomClick: (RoomId) -> Unit = EnsureNeverCalledWithParam(),
     onDeclineInviteAndBlockUser: (RoomListRoomSummary) -> Unit = EnsureNeverCalledWithParam(),
+    isManagedFamilyMode: Boolean = false,
 ) {
     setSafeContent {
         HomeView(
@@ -289,6 +307,12 @@ private fun AndroidComposeUiTest<ComponentActivity>.setRoomListView(
             onReportRoomClick = onReportRoomClick,
             acceptDeclineInviteView = {},
             leaveRoomView = {},
+            isManagedFamilyMode = isManagedFamilyMode,
         )
     }
+}
+
+private fun AndroidComposeUiTest<ComponentActivity>.clickOnSettings() {
+    val settings = activity!!.getString(CommonStrings.common_settings)
+    onNodeWithContentDescription(settings).performClick()
 }

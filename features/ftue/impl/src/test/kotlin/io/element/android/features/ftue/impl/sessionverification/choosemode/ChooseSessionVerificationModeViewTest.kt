@@ -13,7 +13,9 @@ package io.element.android.features.ftue.impl.sessionverification.choosemode
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.AndroidComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.v2.runAndroidComposeUiTest
+import com.google.common.truth.Truth.assertThat
 import io.element.android.features.ftue.impl.R
 import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.ui.strings.CommonStrings
@@ -73,12 +75,26 @@ class ChooseSessionVerificationModeViewTest : RobolectricTest() {
         }
     }
 
+    @Config(qualifiers = "h1024dp")
+    @Test
+    fun `managed mode hides identity reset`() = runAndroidComposeUiTest {
+        setChooseSelfVerificationModeView(
+            state = aChooseSelfVerificationModeState(),
+            showResetIdentity = false,
+        )
+
+        val resetNodes = onAllNodesWithText(activity!!.getString(R.string.screen_identity_confirmation_cannot_confirm))
+            .fetchSemanticsNodes()
+        assertThat(resetNodes).isEmpty()
+    }
+
     private fun AndroidComposeUiTest<ComponentActivity>.setChooseSelfVerificationModeView(
         state: ChooseSelfVerificationModeState,
         onLearnMoreClick: () -> Unit = EnsureNeverCalled(),
         onUseAnotherDevice: () -> Unit = EnsureNeverCalled(),
         onResetKey: () -> Unit = EnsureNeverCalled(),
         onEnterRecoveryKey: () -> Unit = EnsureNeverCalled(),
+        showResetIdentity: Boolean = true,
     ) {
         setContent {
             ChooseSelfVerificationModeView(
@@ -87,6 +103,7 @@ class ChooseSessionVerificationModeViewTest : RobolectricTest() {
                 onUseAnotherDevice = onUseAnotherDevice,
                 onResetKey = onResetKey,
                 onUseRecoveryKey = onEnterRecoveryKey,
+                showResetIdentity = showResetIdentity,
             )
         }
     }

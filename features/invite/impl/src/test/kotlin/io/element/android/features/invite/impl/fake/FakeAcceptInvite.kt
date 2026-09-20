@@ -8,7 +8,7 @@
 
 package io.element.android.features.invite.impl.fake
 
-import io.element.android.features.invite.impl.AcceptInvite
+import io.element.android.features.invite.api.AcceptInvite
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.tests.testutils.lambda.lambdaError
 import io.element.android.tests.testutils.simulateLongTask

@@ -12,11 +12,14 @@ import config.PushProvidersConfig
 
 object ModulesConfig {
     val pushProvidersConfig = PushProvidersConfig(
-        includeFirebase = BuildTimeConfig.PUSH_CONFIG_INCLUDE_FIREBASE,
+        includeFirebase = BuildTimeConfig.PUSH_CONFIG_INCLUDE_FIREBASE && !BuildTimeConfig.MANAGED_FAMILY_MODE,
         includeUnifiedPush = BuildTimeConfig.PUSH_CONFIG_INCLUDE_UNIFIED_PUSH,
     )
 
-    val analyticsConfig: AnalyticsConfig = if (isEnterpriseBuild) {
+    val analyticsConfig: AnalyticsConfig = if (BuildTimeConfig.MANAGED_FAMILY_MODE) {
+        println("Analytics disabled for managed family mode")
+        AnalyticsConfig.Disabled
+    } else if (isEnterpriseBuild) {
         // Is Posthog configuration available?
         val withPosthog = BuildTimeConfig.SERVICES_POSTHOG_APIKEY.isNullOrEmpty().not() &&
             BuildTimeConfig.SERVICES_POSTHOG_HOST.isNullOrEmpty().not()

@@ -10,6 +10,7 @@ package io.element.android.features.invite.impl
 
 import dev.zacsweers.metro.ContributesBinding
 import im.vector.app.features.analytics.plan.JoinedRoom
+import io.element.android.features.invite.api.AcceptInvite
 import io.element.android.features.invite.api.SeenInvitesStore
 import io.element.android.libraries.core.extensions.mapFailure
 import io.element.android.libraries.di.SessionScope
@@ -20,14 +21,6 @@ import io.element.android.libraries.matrix.api.exception.ClientException
 import io.element.android.libraries.matrix.api.exception.ErrorKind
 import io.element.android.libraries.matrix.api.room.join.JoinRoom
 import io.element.android.libraries.push.api.notifications.NotificationCleaner
-
-interface AcceptInvite {
-    suspend operator fun invoke(roomId: RoomId): Result<RoomId>
-
-    sealed class Failures : Exception() {
-        data object InvalidInvite : Failures()
-    }
-}
 
 @ContributesBinding(SessionScope::class)
 class DefaultAcceptInvite(

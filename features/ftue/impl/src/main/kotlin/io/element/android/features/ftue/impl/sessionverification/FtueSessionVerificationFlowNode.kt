@@ -24,6 +24,7 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedInject
 import io.element.android.annotations.ContributesNode
 import io.element.android.appconfig.LearnMoreConfig
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.ftue.impl.sessionverification.choosemode.ChooseSelfVerificationModeNode
 import io.element.android.features.securebackup.api.SecureBackupEntryPoint
 import io.element.android.features.verifysession.api.OutgoingVerificationEntryPoint
@@ -34,6 +35,7 @@ import io.element.android.libraries.architecture.createNode
 import io.element.android.libraries.designsystem.utils.OpenUrlInTabView
 import io.element.android.libraries.di.SessionScope
 import io.element.android.libraries.matrix.api.verification.VerificationRequest
+import io.element.android.libraries.ui.common.nodes.emptyNode
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 
@@ -82,6 +84,10 @@ class FtueSessionVerificationFlowNode(
     }
 
     override fun resolve(navTarget: NavTarget, buildContext: BuildContext): Node {
+        if (ManagedFamilyConfig.ENABLED && navTarget is NavTarget.ResetIdentity) {
+            lifecycleScope.launch { backstack.newRoot(NavTarget.Root) }
+            return emptyNode(buildContext)
+        }
         return when (navTarget) {
             is NavTarget.Root -> {
                 val callback = object : ChooseSelfVerificationModeNode.Callback {
@@ -94,7 +100,7 @@ class FtueSessionVerificationFlowNode(
                     }
 
                     override fun navigateToResetKey() {
-                        backstack.push(NavTarget.ResetIdentity)
+                        if (!ManagedFamilyConfig.ENABLED) backstack.push(NavTarget.ResetIdentity)
                     }
 
                     override fun navigateToLearnMoreAboutEncryption() {

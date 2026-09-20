@@ -10,9 +10,11 @@ package io.element.android.features.ftue.impl
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.bumble.appyx.core.modality.BuildContext
+import com.bumble.appyx.core.node.Node
 import com.bumble.appyx.testing.junit4.util.MainDispatcherRule
 import com.google.common.truth.Truth.assertThat
 import io.element.android.features.lockscreen.test.FakeLockScreenEntryPoint
+import io.element.android.features.securebackup.api.SecureBackupEntryPoint
 import io.element.android.tests.testutils.lambda.lambdaError
 import io.element.android.tests.testutils.node.TestParentNode
 import kotlinx.coroutines.test.runTest
@@ -36,6 +38,14 @@ class DefaultFtueEntryPointTest {
                 analyticsEntryPoint = { _, _ -> lambdaError() },
                 defaultFtueService = createDefaultFtueService(),
                 lockScreenEntryPoint = FakeLockScreenEntryPoint(),
+                secureBackupEntryPoint = object : SecureBackupEntryPoint {
+                    override fun createNode(
+                        parentNode: Node,
+                        buildContext: BuildContext,
+                        params: SecureBackupEntryPoint.Params,
+                        callback: SecureBackupEntryPoint.Callback,
+                    ): Node = lambdaError()
+                },
             )
         }
         val result = entryPoint.createNode(parentNode, BuildContext.root(null))

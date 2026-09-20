@@ -11,15 +11,18 @@ package io.element.android.features.securebackup.impl
 import android.os.Parcelable
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import com.bumble.appyx.core.modality.BuildContext
 import com.bumble.appyx.core.node.Node
 import com.bumble.appyx.core.plugin.Plugin
 import com.bumble.appyx.navmodel.backstack.BackStack
+import com.bumble.appyx.navmodel.backstack.operation.newRoot
 import com.bumble.appyx.navmodel.backstack.operation.pop
 import com.bumble.appyx.navmodel.backstack.operation.push
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedInject
 import io.element.android.annotations.ContributesNode
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.securebackup.api.SecureBackupEntryPoint
 import io.element.android.features.securebackup.api.SecureBackupSetupEntryPoint
 import io.element.android.features.securebackup.impl.disable.SecureBackupDisableNode
@@ -32,6 +35,7 @@ import io.element.android.libraries.architecture.appyx.canPop
 import io.element.android.libraries.architecture.callback
 import io.element.android.libraries.architecture.createNode
 import io.element.android.libraries.di.SessionScope
+import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 
 @ContributesNode(SessionScope::class)
@@ -46,7 +50,7 @@ class SecureBackupFlowNode(
             SecureBackupEntryPoint.InitialTarget.Root -> NavTarget.Root
             SecureBackupEntryPoint.InitialTarget.SetUpRecovery -> NavTarget.Setup
             SecureBackupEntryPoint.InitialTarget.EnterRecoveryKey -> NavTarget.EnterRecoveryKey
-            is SecureBackupEntryPoint.InitialTarget.ResetIdentity -> NavTarget.ResetIdentity
+            is SecureBackupEntryPoint.InitialTarget.ResetIdentity -> if (ManagedFamilyConfig.ENABLED) NavTarget.Root else NavTarget.ResetIdentity
         },
         savedStateMap = buildContext.savedStateMap,
     ),
@@ -76,6 +80,10 @@ class SecureBackupFlowNode(
     private val callback: SecureBackupEntryPoint.Callback = callback()
 
     override fun resolve(navTarget: NavTarget, buildContext: BuildContext): Node {
+        if (ManagedFamilyConfig.ENABLED && navTarget is NavTarget.ResetIdentity) {
+            lifecycleScope.launch { backstack.newRoot(NavTarget.Root) }
+            return resolve(NavTarget.Root, buildContext)
+        }
         return when (navTarget) {
             NavTarget.Root -> {
                 val callback = object : SecureBackupRootNode.Callback {

@@ -12,12 +12,15 @@ import android.Manifest
 import android.os.Build
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.ftue.api.state.FtueService
 import io.element.android.features.ftue.api.state.FtueState
 import io.element.android.features.lockscreen.api.LockScreenService
 import io.element.android.libraries.core.coroutine.mapState
 import io.element.android.libraries.di.SessionScope
 import io.element.android.libraries.di.annotations.SessionCoroutineScope
+import io.element.android.libraries.matrix.api.encryption.EncryptionService
+import io.element.android.libraries.matrix.api.encryption.RecoveryState
 import io.element.android.libraries.matrix.api.verification.SessionVerificationService
 import io.element.android.libraries.matrix.api.verification.SessionVerifiedStatus
 import io.element.android.libraries.permissions.api.PermissionStateProvider
@@ -42,6 +45,7 @@ class DefaultFtueService(
     private val permissionStateProvider: PermissionStateProvider,
     private val lockScreenService: LockScreenService,
     private val sessionVerificationService: SessionVerificationService,
+    private val encryptionService: EncryptionService,
     private val sessionPreferencesStore: SessionPreferencesStore,
 ) : FtueService {
     private val userNeedsToConfirmSessionVerificationSuccess = MutableStateFlow(false)
@@ -66,6 +70,7 @@ class DefaultFtueService(
                 }
             },
             userNeedsToConfirmSessionVerificationSuccess,
+            encryptionService.recoveryStateStateFlow,
             analyticsService.didAskUserConsentFlow.distinctUntilChanged(),
         ) {
             updateFtueStep()
@@ -90,10 +95,17 @@ class DefaultFtueService(
             }
             FtueStep.WaitingForInitialState -> if (isSessionNotVerified() || userNeedsToConfirmSessionVerificationSuccess.value) {
                 FtueStep.SessionVerification
+            } else if (needsRecoverySetup()) {
+                FtueStep.RecoverySetup
+            } else if (needsRecoveryKey()) {
+                FtueStep.RecoveryKeyEntry
             } else {
                 getNextStep(FtueStep.SessionVerification)
             }
-            FtueStep.SessionVerification -> if (shouldAskNotificationPermissions()) {
+            FtueStep.SessionVerification,
+            FtueStep.RecoverySetup,
+            FtueStep.RecoveryKeyEntry,
+            -> if (shouldAskNotificationPermissions()) {
                 FtueStep.NotificationsOptIn
             } else {
                 getNextStep(FtueStep.NotificationsOptIn)
@@ -112,12 +124,22 @@ class DefaultFtueService(
         }
 
     private fun isSessionVerificationStateReady(): Boolean {
-        return sessionVerificationService.sessionVerifiedStatus.value != SessionVerifiedStatus.Unknown
+        if (sessionVerificationService.sessionVerifiedStatus.value == SessionVerifiedStatus.Unknown) return false
+        return !ManagedFamilyConfig.ENABLED || encryptionService.recoveryStateStateFlow.value.isKnown()
     }
 
     private suspend fun isSessionNotVerified(): Boolean {
-        return sessionVerificationService.sessionVerifiedStatus.value == SessionVerifiedStatus.NotVerified && !canSkipVerification()
+        return sessionVerificationService.sessionVerifiedStatus.value == SessionVerifiedStatus.NotVerified &&
+            (ManagedFamilyConfig.ENABLED || !canSkipVerification())
     }
+
+    private fun needsRecoverySetup(): Boolean =
+        ManagedFamilyConfig.ENABLED && encryptionService.recoveryStateStateFlow.value == RecoveryState.DISABLED
+
+    private fun needsRecoveryKey(): Boolean =
+        ManagedFamilyConfig.ENABLED && encryptionService.recoveryStateStateFlow.value == RecoveryState.INCOMPLETE
+
+    private fun RecoveryState.isKnown(): Boolean = this != RecoveryState.UNKNOWN && this != RecoveryState.WAITING_FOR_SYNC
 
     private suspend fun canSkipVerification(): Boolean {
         return sessionPreferencesStore.isSessionVerificationSkipped().first()
@@ -150,6 +172,8 @@ class DefaultFtueService(
 sealed interface FtueStep {
     data object WaitingForInitialState : FtueStep
     data object SessionVerification : FtueStep
+    data object RecoverySetup : FtueStep
+    data object RecoveryKeyEntry : FtueStep
     data object NotificationsOptIn : FtueStep
     data object AnalyticsOptIn : FtueStep
     data object LockscreenSetup : FtueStep

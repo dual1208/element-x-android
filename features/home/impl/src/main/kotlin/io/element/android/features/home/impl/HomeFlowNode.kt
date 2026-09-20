@@ -32,6 +32,7 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedInject
 import im.vector.app.features.analytics.plan.MobileScreen
 import io.element.android.annotations.ContributesNode
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.home.api.HomeEntryPoint
 import io.element.android.features.home.impl.components.RoomListMenuAction
 import io.element.android.features.home.impl.model.RoomListRoomSummary
@@ -246,7 +247,8 @@ class HomeFlowNode(
                         onSelectNewOwners = ::navigateToSelectNewOwnersWhenLeavingRoom,
                         modifier = Modifier
                     )
-                }
+                },
+                isManagedFamilyMode = ManagedFamilyConfig.ENABLED,
             )
             directLogoutView.Render(state.directLogoutState)
         }

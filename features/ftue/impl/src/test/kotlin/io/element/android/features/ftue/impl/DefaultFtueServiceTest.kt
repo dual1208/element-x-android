@@ -17,8 +17,10 @@ import io.element.android.features.ftue.impl.state.FtueStep
 import io.element.android.features.ftue.impl.state.InternalFtueState
 import io.element.android.features.lockscreen.api.LockScreenService
 import io.element.android.features.lockscreen.test.FakeLockScreenService
+import io.element.android.libraries.matrix.api.encryption.RecoveryState
 import io.element.android.libraries.matrix.api.verification.SessionVerificationService
 import io.element.android.libraries.matrix.api.verification.SessionVerifiedStatus
+import io.element.android.libraries.matrix.test.encryption.FakeEncryptionService
 import io.element.android.libraries.matrix.test.verification.FakeSessionVerificationService
 import io.element.android.libraries.permissions.api.PermissionStateProvider
 import io.element.android.libraries.permissions.test.FakePermissionStateProvider
@@ -33,6 +35,62 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class DefaultFtueServiceTest {
+    @Test
+    fun `managed mode requires verification even when verification was previously skipped`() = runTest {
+        val sessionVerificationService = FakeSessionVerificationService().apply {
+            emitVerifiedStatus(SessionVerifiedStatus.NotVerified)
+        }
+        val sessionPreferencesStore = InMemorySessionPreferencesStore(isSessionVerificationSkipped = true)
+        val service = createDefaultFtueService(
+            sessionVerificationService = sessionVerificationService,
+            sessionPreferencesStore = sessionPreferencesStore,
+        )
+
+        service.ftueStepStateFlow.test {
+            assertThat(awaitItem()).isEqualTo(InternalFtueState.Unknown)
+            assertThat(awaitItem()).isEqualTo(InternalFtueState.Incomplete(FtueStep.SessionVerification))
+        }
+    }
+
+    @Test
+    fun `verified session with disabled recovery requires recovery setup`() = runTest {
+        val service = createDefaultFtueService(
+            sessionVerificationService = verifiedSession(),
+            recoveryState = RecoveryState.DISABLED,
+        )
+
+        service.ftueStepStateFlow.test {
+            assertThat(awaitItem()).isEqualTo(InternalFtueState.Unknown)
+            assertThat(awaitItem()).isEqualTo(InternalFtueState.Incomplete(FtueStep.RecoverySetup))
+        }
+    }
+
+    @Test
+    fun `verified session with incomplete recovery requires recovery key`() = runTest {
+        val service = createDefaultFtueService(
+            sessionVerificationService = verifiedSession(),
+            recoveryState = RecoveryState.INCOMPLETE,
+        )
+
+        service.ftueStepStateFlow.test {
+            assertThat(awaitItem()).isEqualTo(InternalFtueState.Unknown)
+            assertThat(awaitItem()).isEqualTo(InternalFtueState.Incomplete(FtueStep.RecoveryKeyEntry))
+        }
+    }
+
+    @Test
+    fun `verified session with unknown recovery waits for initial state`() = runTest {
+        val service = createDefaultFtueService(
+            sessionVerificationService = verifiedSession(),
+            recoveryState = RecoveryState.UNKNOWN,
+        )
+
+        service.ftueStepStateFlow.test {
+            assertThat(awaitItem()).isEqualTo(InternalFtueState.Unknown)
+            assertThat(awaitItem()).isEqualTo(InternalFtueState.Incomplete(FtueStep.WaitingForInitialState))
+        }
+    }
+
     @Test
     fun `given any check being false and session verification state being loaded, FtueState is Incomplete`() = runTest {
         val sessionVerificationService = FakeSessionVerificationService().apply {
@@ -192,17 +250,23 @@ class DefaultFtueServiceTest {
     }
 }
 
+private suspend fun verifiedSession() = FakeSessionVerificationService().apply {
+    emitVerifiedStatus(SessionVerifiedStatus.Verified)
+}
+
 internal fun TestScope.createDefaultFtueService(
     sessionVerificationService: SessionVerificationService = FakeSessionVerificationService(),
     analyticsService: AnalyticsService = FakeAnalyticsService(),
     permissionStateProvider: PermissionStateProvider = FakePermissionStateProvider(permissionGranted = false),
     lockScreenService: LockScreenService = FakeLockScreenService(),
     sessionPreferencesStore: SessionPreferencesStore = InMemorySessionPreferencesStore(),
+    recoveryState: RecoveryState = RecoveryState.ENABLED,
     // First version where notification permission is required
     sdkIntVersion: Int = Build.VERSION_CODES.TIRAMISU,
 ) = DefaultFtueService(
     sessionCoroutineScope = backgroundScope,
     sessionVerificationService = sessionVerificationService,
+    encryptionService = FakeEncryptionService().apply { recoveryStateStateFlow.value = recoveryState },
     sdkVersionProvider = FakeBuildVersionSdkIntProvider(sdkIntVersion),
     analyticsService = analyticsService,
     permissionStateProvider = permissionStateProvider,

@@ -28,6 +28,7 @@ import io.element.android.features.ftue.impl.state.DefaultFtueService
 import io.element.android.features.ftue.impl.state.FtueStep
 import io.element.android.features.ftue.impl.state.InternalFtueState
 import io.element.android.features.lockscreen.api.LockScreenEntryPoint
+import io.element.android.features.securebackup.api.SecureBackupEntryPoint
 import io.element.android.libraries.architecture.BackstackView
 import io.element.android.libraries.architecture.BaseFlowNode
 import io.element.android.libraries.architecture.createNode
@@ -46,6 +47,7 @@ class FtueFlowNode(
     private val defaultFtueService: DefaultFtueService,
     private val analyticsEntryPoint: AnalyticsEntryPoint,
     private val lockScreenEntryPoint: LockScreenEntryPoint,
+    private val secureBackupEntryPoint: SecureBackupEntryPoint,
 ) : BaseFlowNode<FtueFlowNode.NavTarget>(
     backstack = BackStack(
         initialElement = NavTarget.Placeholder,
@@ -60,6 +62,9 @@ class FtueFlowNode(
 
         @Parcelize
         data object SessionVerification : NavTarget
+
+        @Parcelize
+        data class Recovery(val initialTarget: SecureBackupEntryPoint.InitialTarget) : NavTarget
 
         @Parcelize
         data object NotificationsOptIn : NavTarget
@@ -93,6 +98,18 @@ class FtueFlowNode(
                     }
                 }
                 createNode<FtueSessionVerificationFlowNode>(buildContext, listOf(callback))
+            }
+            is NavTarget.Recovery -> {
+                secureBackupEntryPoint.createNode(
+                    parentNode = this,
+                    buildContext = buildContext,
+                    params = SecureBackupEntryPoint.Params(navTarget.initialTarget),
+                    callback = object : SecureBackupEntryPoint.Callback {
+                        override fun onDone() {
+                            defaultFtueService.updateFtueStep()
+                        }
+                    },
+                )
             }
             NavTarget.NotificationsOptIn -> {
                 val callback = object : NotificationsOptInNode.Callback {
@@ -128,6 +145,12 @@ class FtueFlowNode(
             }
             FtueStep.SessionVerification -> {
                 backstack.newRoot(NavTarget.SessionVerification)
+            }
+            FtueStep.RecoverySetup -> {
+                backstack.newRoot(NavTarget.Recovery(SecureBackupEntryPoint.InitialTarget.SetUpRecovery))
+            }
+            FtueStep.RecoveryKeyEntry -> {
+                backstack.newRoot(NavTarget.Recovery(SecureBackupEntryPoint.InitialTarget.EnterRecoveryKey))
             }
             FtueStep.NotificationsOptIn -> {
                 backstack.newRoot(NavTarget.NotificationsOptIn)

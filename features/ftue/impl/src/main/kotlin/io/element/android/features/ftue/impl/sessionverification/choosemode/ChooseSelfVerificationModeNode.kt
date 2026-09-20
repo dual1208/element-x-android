@@ -16,6 +16,7 @@ import com.bumble.appyx.core.plugin.Plugin
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedInject
 import io.element.android.annotations.ContributesNode
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.logout.api.direct.DirectLogoutView
 import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.architecture.callback
@@ -47,6 +48,7 @@ class ChooseSelfVerificationModeNode(
             onUseAnotherDevice = callback::navigateToUseAnotherDevice,
             onUseRecoveryKey = callback::navigateToUseRecoveryKey,
             onResetKey = callback::navigateToResetKey,
+            showResetIdentity = !ManagedFamilyConfig.ENABLED,
             onLearnMore = callback::navigateToLearnMoreAboutEncryption,
             modifier = modifier,
         )

@@ -11,6 +11,7 @@ package io.element.android.features.enterprise.impl
 import androidx.compose.ui.graphics.Color
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.compound.colors.SemanticColorsLightDark
 import io.element.android.features.enterprise.api.BugReportUrl
 import io.element.android.features.enterprise.api.EnterpriseService
@@ -23,8 +24,15 @@ import kotlinx.coroutines.flow.flowOf
 class DefaultEnterpriseService : EnterpriseService {
     override suspend fun isEnterpriseUser(sessionId: SessionId) = false
     override suspend fun tweakMasUrl(url: String, urlContentFetcher: ClientUrlContentFetcher) = url
-    override fun homeserverAllowList(): List<String> = emptyList()
-    override suspend fun isAllowedToConnectToHomeserver(homeserverUrl: String) = true
+    override fun homeserverAllowList(): List<String> = if (ManagedFamilyConfig.ENABLED) {
+        listOf(ManagedFamilyConfig.HOMESERVER_URL)
+    } else {
+        emptyList()
+    }
+
+    override suspend fun isAllowedToConnectToHomeserver(homeserverUrl: String): Boolean {
+        return !ManagedFamilyConfig.ENABLED || homeserverUrl.trimEnd('/') == ManagedFamilyConfig.HOMESERVER_URL
+    }
     override suspend fun isElementProEnforced(serverName: String): Boolean = false
 
     override suspend fun overrideBrandColor(sessionId: SessionId?, brandColor: String?) = Unit

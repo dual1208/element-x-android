@@ -9,10 +9,10 @@
 package io.element.android.features.invite.impl.acceptdecline
 
 import com.google.common.truth.Truth.assertThat
+import io.element.android.features.invite.api.AcceptInvite
 import io.element.android.features.invite.api.InviteData
 import io.element.android.features.invite.api.acceptdecline.AcceptDeclineInviteEvent
 import io.element.android.features.invite.api.acceptdecline.ConfirmingDeclineInvite
-import io.element.android.features.invite.impl.AcceptInvite
 import io.element.android.features.invite.impl.DeclineInvite
 import io.element.android.features.invite.impl.fake.FakeAcceptInvite
 import io.element.android.features.invite.impl.fake.FakeDeclineInvite

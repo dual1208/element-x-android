@@ -32,6 +32,7 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedInject
 import im.vector.app.features.analytics.plan.JoinedRoom
 import io.element.android.annotations.ContributesNode
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.appnav.intent.IntentResolver
 import io.element.android.appnav.intent.ResolvedIntent
 import io.element.android.appnav.room.RoomFlowNode
@@ -499,6 +500,7 @@ class RootFlowNode(
             is PermalinkData.FallbackLink -> Unit
             is PermalinkData.RoomEmailInviteLink -> Unit
             is PermalinkData.RoomLink -> {
+                if (!ManagedFamilyConfig.isAllowedRoom(permalinkData.roomIdOrAlias)) return
                 // If there is a thread id, focus on it in the main timeline
                 val focusedEventId = if (permalinkData.threadId != null) {
                     permalinkData.threadId?.asEventId()
@@ -531,6 +533,7 @@ class RootFlowNode(
             when (deeplinkData) {
                 is DeeplinkData.Root -> Unit // The room list will always be shown, observing FtueState
                 is DeeplinkData.Room -> {
+                    if (!ManagedFamilyConfig.isAllowedRoom(deeplinkData.roomId)) return
                     loggedInFlowNode.attachRoom(
                         roomIdOrAlias = deeplinkData.roomId.toRoomIdOrAlias(),
                         initialElement = RoomNavigationTarget.Root(eventId = deeplinkData.threadId?.asEventId() ?: deeplinkData.eventId),

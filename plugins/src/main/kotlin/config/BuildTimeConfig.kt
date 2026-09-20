@@ -9,6 +9,7 @@
 package config
 
 object BuildTimeConfig {
+    const val MANAGED_FAMILY_MODE: Boolean = true
     const val APPLICATION_ID = "io.element.android.x"
     const val APPLICATION_NAME = "Element X"
     val METADATA_HOST_REVERSED: String? = null
@@ -31,7 +32,7 @@ object BuildTimeConfig {
     val BUG_REPORT_APP_NAME: String? = null
     const val PUSH_CONFIG_INCLUDE_FIREBASE: Boolean = true
     const val PUSH_CONFIG_INCLUDE_UNIFIED_PUSH: Boolean = true
-    val PUSHER_APP_ID_RELEASE: String? = null
-    val PUSHER_APP_ID_DEBUG: String? = null
-    val PUSHER_APP_ID_NIGHTLY: String? = null
+    val PUSHER_APP_ID_RELEASE: String? = "io.element.android.x.family"
+    val PUSHER_APP_ID_DEBUG: String? = "io.element.android.x.family.debug"
+    val PUSHER_APP_ID_NIGHTLY: String? = "io.element.android.x.family.nightly"
 }
