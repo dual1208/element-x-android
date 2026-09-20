@@ -55,7 +55,7 @@ just test     # Run the login feature unit tests.
 just ci       # Run lint, tests, and the APK build.
 ```
 
-Gradle writes the arm64 artifact to
+The verified arm64 artifact is
 `app/build/outputs/apk/gplay/debug/app-gplay-arm64-v8a-debug.apk`. It installs
 as `io.element.android.x.debug`, keeping its data and identity separate from
 the release package `io.element.android.x`. The install recipe uses
@@ -72,9 +72,35 @@ events to Element production services.
 
 The gplay build is appropriate for the target OnePlus device because Google
 Play services are present. The existing session previously completed Matrix
-sync and MAS login through `https://8.163.2.191/auth/` on Android 11 (API 30);
-the managed-family upgrade still requires physical install and launch
-verification.
+sync and MAS login through `https://8.163.2.191/auth/` on Android 11 (API 30).
+
+## Physical verification
+
+`assembleGplayDebug` completed successfully with the one-worker background
+policy. The arm64 APK is 161,799,458 bytes and has SHA-256
+`bdc6d53b41a1a4cbc1c4b5b6033e9c0863d33bdd49edf51ee36d3d0e9d961097`.
+Its signing-certificate SHA-256 is
+`b0b051dc565c812fe17f6f3e945b4d79047123ab0da61286769eb2949197130e`,
+which matches the previously installed build.
+
+The APK was installed on the physical arm64 Android 11 device with
+`adb install -r`; package data was retained, and a cold launch resumed the
+existing account in `io.element.android.x.MainActivity`. The installed package
+reported version `26.09.2-family.1` and version code `202609022`. The managed
+crypto gate presented the existing supervised **Get recovery key** setup before
+opening Family. During verification, one automated tap was attempted on the
+**Generate your recovery key** control. After 30 seconds the screen still
+showed the same control, no recovery key was visible, and no local key file had
+been written. The control invokes `enableRecovery`, so the unchanged client UI
+alone does not prove that server-side recovery state was untouched; recheck
+the account recovery metadata before any later setup attempt. No identity-reset
+or change-recovery-key action was invoked, and the application was not
+uninstalled or cleared.
+
+Ignored verification evidence is under `build/codex-logs/`, including
+`build-gplay-debug.log`, `install-managed-family.log`,
+`launch-managed-family.log`, the APK signing reports, and the non-secret
+`managed-family-launch.png` gate screenshot.
 
 ## Push notification limitation
 
