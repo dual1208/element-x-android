@@ -56,14 +56,15 @@ just ci       # Run lint, tests, and the APK build.
 ```
 
 The verified arm64 artifact is
-`app/build/outputs/apk/gplay/debug/app-gplay-arm64-v8a-debug.apk`. It installs
+`app/build/intermediates/apk/gplay/debug/app-gplay-arm64-v8a-debug.apk`. It installs
 as `io.element.android.x.debug`, keeping its data and identity separate from
 the release package `io.element.android.x`. The install recipe uses
-`adb install -r -d` and never uninstalls the existing application.
+`adb install -r -t` and never uninstalls the existing application. The `-t`
+flag is required because this debug APK is marked `testOnly`.
 
-This fork build reports version `26.09.2-family.1`. The arm64 APK version code
-is `202609022`, so it upgrades the previously installed `202609012` build while
-preserving its application data.
+This fork build reports version `26.09.2-family.2`. Both verified APK manifests
+use version code `202609030`, so the arm64 APK upgrades the previously installed
+`202609022` build while preserving its application data.
 
 Analytics and crash-reporting providers are removed from the managed family
 build graph. Local diagnostic logs and the explicit administrator bug-report
@@ -75,6 +76,45 @@ Play services are present. The existing session previously completed Matrix
 sync and MAS login through `https://8.163.2.191/auth/` on Android 11 (API 30).
 
 ## Physical verification
+
+The family.2 arm64-only cached build completed successfully in 4 minutes 58
+seconds with one Gradle worker and the background resource policy. The full
+multi-output packaging attempt had exposed an AGP 9.3.1 `ApkFlinger` signing
+deadlock, so the reproducible build recipe uses AGP's target-ABI properties to
+package only the physical device's `arm64-v8a` output. No clean or test rerun is
+needed for that packaging retry.
+
+The final ignored artifact staging directory is
+`build/codex-artifacts/family2/`. It contains binary-truth combined
+`output-metadata.json` plus these verified APKs:
+
+- `app-gplay-arm64-v8a-debug.apk`: 161,799,942 bytes, SHA-256
+  `55db951e2561d37b7079d8fac0fa0e9d817c95c51e1889636cfbfcadfca514b9`.
+- `app-gplay-universal-debug.apk`: 410,023,078 bytes, SHA-256
+  `738b2138ad524ca212074bad0df50bb18453cd1bce8d553fd89f7ee9f574b030`.
+
+Both APKs report package `io.element.android.x.debug`, version
+`26.09.2-family.2`, manifest version code `202609030`, minimum SDK 24, a valid
+ZIP and 16 KiB page alignment, and a valid APK Signature Scheme v2 signature.
+Their signing-certificate SHA-256 is
+`b0b051dc565c812fe17f6f3e945b4d79047123ab0da61286769eb2949197130e`,
+matching the previously installed build. The arm64 APK contains only
+`arm64-v8a` native libraries.
+
+AGP's arm64-only `output-metadata.json` reported split code `202609032`, while
+both `aapt dump badging` and the binary Android manifest report `202609030`.
+The combined deployment metadata therefore records the verified binary value
+`202609030`; the unmodified Gradle metadata is retained at
+`build/codex-logs/output-metadata-family2-arm64-gradle.json` for diagnosis.
+
+The family.2 arm64 APK was installed in place on the physical OnePlus 6,
+Android 11 (API 30), with `adb install -r -t`. The installed package reports
+version `26.09.2-family.2` and version code `202609030`. A cold launch completed
+successfully and left `io.element.android.x.MainActivity` in the foreground.
+No UI tap, screenshot, account-data inspection, recovery action, logout,
+message, or call was performed during family.2 verification.
+
+### Previous family.1 recovery-gate evidence
 
 `assembleGplayDebug` completed successfully with the one-worker background
 policy. The arm64 APK is 161,799,458 bytes and has SHA-256
@@ -107,10 +147,10 @@ A subsequent read-only server check found the `api30` backup still at version
 detected. Because pre-attempt secret-storage fingerprints were not recorded,
 this evidence cannot exclude transient client-side work.
 
-Ignored verification evidence is under `build/codex-logs/`, including
-`build-gplay-debug.log`, `install-managed-family.log`,
-`launch-managed-family.log`, the APK signing reports, and the non-secret
-`managed-family-launch.png` gate screenshot.
+Ignored verification evidence is under `build/codex-logs/`, including the
+family.2 targeted test, packaging, staged-APK verification, raw metadata, and
+the earlier family.1 install, launch, signing, and non-secret recovery-gate
+records.
 
 ## Push notification limitation
 

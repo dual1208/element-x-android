@@ -3,7 +3,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 serial := env_var_or_default("ANDROID_SERIAL", "")
 gradle := "JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home taskpolicy -b nice -n 15 ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs='-Xmx3g -Dfile.encoding=UTF-8 -XX:+UseG1GC'"
 logs := "build/codex-logs"
-apk := "app/build/outputs/apk/gplay/debug/app-gplay-arm64-v8a-debug.apk"
+apk := "app/build/intermediates/apk/gplay/debug/app-gplay-arm64-v8a-debug.apk"
 package := "io.element.android.x.debug"
 
 device:
@@ -26,7 +26,7 @@ test:
 
 build:
     mkdir -p {{logs}}
-    {{gradle}} :app:assembleGplayDebug 2>&1 | tee {{logs}}/build-gplay-debug.log
+    {{gradle}} -Pandroid.injected.build.abi=arm64-v8a -Pandroid.buildOnlyTargetAbi=true :app:assembleGplayDebug 2>&1 | tee {{logs}}/build-gplay-debug.log
 
 check: lint test
 
@@ -34,7 +34,7 @@ ci: check build
 
 install: device build
     test -f {{apk}}
-    adb -s "{{serial}}" install -r -d {{apk}} 2>&1 | tee {{logs}}/install.log
+    adb -s "{{serial}}" install -r -t {{apk}} 2>&1 | tee {{logs}}/install.log
 
 launch: device
     adb -s "{{serial}}" shell am force-stop {{package}}
