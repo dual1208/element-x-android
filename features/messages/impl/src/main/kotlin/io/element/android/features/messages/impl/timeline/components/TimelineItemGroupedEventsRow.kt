@@ -15,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.messages.impl.R
 import io.element.android.features.messages.impl.timeline.TimelineEvent
 import io.element.android.features.messages.impl.timeline.TimelineRoomInfo
@@ -147,6 +148,7 @@ private fun TimelineItemGroupedEventsRowContent(
             )
         },
 ) {
+    if (ManagedFamilyConfig.ENABLED && !timelineItem.isRedactedMessagesGroup()) return
     Column(modifier = modifier.animateContentSize()) {
         val count = timelineItem.events.size
         // A group made entirely of redacted events is a collapsed run of deleted messages

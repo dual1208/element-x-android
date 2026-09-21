@@ -15,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.messages.impl.timeline.TimelineEvent
 import io.element.android.features.messages.impl.timeline.TimelineRoomInfo
 import io.element.android.features.messages.impl.timeline.components.virtual.TimelineItemDaySeparatorView
@@ -43,14 +44,16 @@ fun TimelineItemVirtualRow(
             is TimelineItemDaySeparatorModel -> TimelineItemDaySeparatorView(virtual.model)
             TimelineItemReadMarkerModel -> TimelineItemReadMarkerView()
             TimelineItemRoomBeginningModel -> {
-                TimelineItemRoomBeginningView(
-                    predecessorRoom = timelineRoomInfo.predecessorRoom,
-                    roomName = timelineRoomInfo.name,
-                    isDm = timelineRoomInfo.isDm,
-                    onPredecessorRoomClick = { roomId ->
-                        eventSink(TimelineEvent.NavigateToPredecessorOrSuccessorRoom(roomId))
-                    },
-                )
+                if (!ManagedFamilyConfig.ENABLED) {
+                    TimelineItemRoomBeginningView(
+                        predecessorRoom = timelineRoomInfo.predecessorRoom,
+                        roomName = timelineRoomInfo.name,
+                        isDm = timelineRoomInfo.isDm,
+                        onPredecessorRoomClick = { roomId ->
+                            eventSink(TimelineEvent.NavigateToPredecessorOrSuccessorRoom(roomId))
+                        },
+                    )
+                }
             }
             is TimelineItemLoadingIndicatorModel -> {
                 TimelineLoadingMoreIndicator(virtual.model.direction)

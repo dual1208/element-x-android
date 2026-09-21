@@ -127,6 +127,7 @@ class RoomDetailsPresenter(
         val topicState = remember(permissions.editDetailsPermissions.canEditTopic, roomTopic, roomType) {
             val topic = roomTopic
             when {
+                ManagedFamilyConfig.ENABLED -> RoomTopicState.Hidden
                 !topic.isNullOrBlank() -> RoomTopicState.ExistingTopic(topic)
                 permissions.editDetailsPermissions.canEditTopic && roomType is RoomDetailsType.Room -> RoomTopicState.CanAddTopic
                 else -> RoomTopicState.Hidden
@@ -198,15 +199,19 @@ class RoomDetailsPresenter(
             roomTopic = topicState,
             memberCount = joinedMemberCount,
             isEncrypted = isEncrypted,
-            canInvite = permissions.canInvite,
-            canEdit = roomType == RoomDetailsType.Room && permissions.editDetailsPermissions.hasAny,
+            canInvite = !ManagedFamilyConfig.ENABLED && permissions.canInvite,
+            canEdit = !ManagedFamilyConfig.ENABLED &&
+                roomType == RoomDetailsType.Room &&
+                permissions.editDetailsPermissions.hasAny,
             roomCallState = roomCallState,
             roomType = roomType,
             dmOtherMemberDetailsState = dmOtherMemberDetailsState,
             leaveRoomState = leaveRoomState,
             roomNotificationSettings = roomNotificationSettingsState.roomNotificationSettings(),
             isFavorite = isFavorite,
-            displayRolesAndPermissionsSettings = !isDm && permissions.canEditRolesAndPermissions,
+            displayRolesAndPermissionsSettings = !ManagedFamilyConfig.ENABLED &&
+                !isDm &&
+                permissions.canEditRolesAndPermissions,
             isPublic = joinRule == JoinRule.Public,
             heroes = roomInfo.heroes,
             pinnedMessagesCount = pinnedMessagesCount,

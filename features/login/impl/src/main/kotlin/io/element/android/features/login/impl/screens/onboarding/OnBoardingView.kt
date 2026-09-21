@@ -342,7 +342,7 @@ private fun OnBoardingButtons(
                     .fillMaxWidth()
             )
         }
-        if (state.isAddingAccount.not()) {
+        if (!ManagedFamilyConfig.ENABLED && state.isAddingAccount.not()) {
             if (state.canReportBug) {
                 // Add a report problem text button. Use a Text since we need a special theme here.
                 Text(

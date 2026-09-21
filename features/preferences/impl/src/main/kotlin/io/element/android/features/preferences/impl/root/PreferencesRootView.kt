@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.preferences.impl.R
@@ -97,7 +98,7 @@ fun PreferencesRootView(
                     onAddAccountClick = onAddAccountClick,
                 )
             }
-            if (state.userStatusState != null) {
+            if (!ManagedFamilyConfig.ENABLED && state.userStatusState != null) {
                 UserStatusSection(
                     userStatusState = state.userStatusState,
                     emojiPickerRenderer = emojiPickerRenderer,
@@ -132,17 +133,21 @@ fun PreferencesRootView(
                 onDeactivateClick = onDeactivateClick,
             )
             // Version
-            Footer(
-                version = state.version,
-                onClick = if (!state.showDeveloperSettings) {
-                    { state.eventSink(PreferencesRootEvent.OnVersionInfoClick) }
-                } else {
-                    null
-                }
-            )
+            if (!ManagedFamilyConfig.ENABLED) {
+                Footer(
+                    version = state.version,
+                    onClick = if (!state.showDeveloperSettings) {
+                        { state.eventSink(PreferencesRootEvent.OnVersionInfoClick) }
+                    } else {
+                        null
+                    }
+                )
+            }
         }
-        state.userStatusState?.let {
-            UserStatusUpdateIndicator(it.updateStatusAction)
+        if (!ManagedFamilyConfig.ENABLED) {
+            state.userStatusState?.let {
+                UserStatusUpdateIndicator(it.updateStatusAction)
+            }
         }
     }
 }

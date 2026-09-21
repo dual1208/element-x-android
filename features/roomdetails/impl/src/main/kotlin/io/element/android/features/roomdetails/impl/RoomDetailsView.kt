@@ -444,14 +444,14 @@ private fun MainActionsSection(
                 onClick = { onCall(CallIntent.VIDEO) },
             )
         }
-        if (state.canInvite && state.roomType !is RoomDetailsType.Dm) {
+        if (!ManagedFamilyConfig.ENABLED && state.canInvite && state.roomType !is RoomDetailsType.Dm) {
             MainActionButton(
                 title = stringResource(CommonStrings.action_invite),
                 imageVector = CompoundIcons.UserAdd(),
                 onClick = onInvitePeople,
             )
         }
-        if (state.roomType is RoomDetailsType.Room) {
+        if (!ManagedFamilyConfig.ENABLED && state.roomType is RoomDetailsType.Room) {
             // Share CTA should be hidden for DMs
             MainActionButton(
                 title = stringResource(CommonStrings.action_share),
