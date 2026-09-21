@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.messages.api.timeline.voicemessages.composer.VoiceMessageComposerEvent
 import io.element.android.features.messages.api.timeline.voicemessages.composer.VoiceMessageComposerState
 import io.element.android.features.messages.api.timeline.voicemessages.composer.VoiceMessageComposerStatePreviewParam
@@ -104,6 +105,7 @@ internal fun MessageComposerView(
         composerMode = state.mode,
         isInThreadTimeline = state.isInThreadTimeline,
         showTextFormatting = state.showTextFormatting,
+        showNotEncryptedBadge = !ManagedFamilyConfig.ENABLED,
         onResetComposerMode = ::onCloseSpecialMode,
         onAddAttachment = ::onAddAttachment,
         onDismissTextFormatting = ::onDismissTextFormatting,

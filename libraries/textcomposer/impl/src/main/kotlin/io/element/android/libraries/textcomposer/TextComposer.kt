@@ -132,6 +132,7 @@ fun TextComposer(
     modifier: Modifier = Modifier,
     showTextFormatting: Boolean = false,
     isInThreadTimeline: Boolean = false,
+    showNotEncryptedBadge: Boolean = true,
 ) {
     val markdown = when (state) {
         is TextEditorState.Markdown -> state.state.text.value()
@@ -388,6 +389,7 @@ fun TextComposer(
         TextFormattingLayout(
             modifier = layoutModifier,
             isRoomEncrypted = state.isRoomEncrypted,
+            showNotEncryptedBadge = showNotEncryptedBadge,
             textInput = textInput,
             dismissTextFormattingButton = {
                 IconColorButton(
@@ -405,6 +407,7 @@ fun TextComposer(
             composerMode = composerMode,
             voiceMessageState = voiceMessageState,
             isRoomEncrypted = state.isRoomEncrypted,
+            showNotEncryptedBadge = showNotEncryptedBadge,
             modifier = layoutModifier,
             textInput = textInput,
             endButtonParams = endButtonParams,
@@ -456,6 +459,7 @@ private fun StandardLayout(
     composerMode: MessageComposerMode,
     voiceMessageState: VoiceMessageState,
     isRoomEncrypted: Boolean?,
+    showNotEncryptedBadge: Boolean,
     textInput: @Composable () -> Unit,
     voiceRecording: @Composable () -> Unit,
     endButtonParams: EndButtonParams,
@@ -466,7 +470,7 @@ private fun StandardLayout(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        if (isRoomEncrypted == false) {
+        if (showNotEncryptedBadge && isRoomEncrypted == false) {
             Spacer(Modifier.height(16.dp))
             NotEncryptedBadge()
             Spacer(Modifier.height(4.dp))
@@ -584,6 +588,7 @@ private fun NotEncryptedBadge() {
 @Composable
 private fun TextFormattingLayout(
     isRoomEncrypted: Boolean?,
+    showNotEncryptedBadge: Boolean,
     textInput: @Composable () -> Unit,
     dismissTextFormattingButton: @Composable () -> Unit,
     textFormatting: @Composable () -> Unit,
@@ -594,7 +599,7 @@ private fun TextFormattingLayout(
         modifier = modifier.padding(vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        if (isRoomEncrypted == false) {
+        if (showNotEncryptedBadge && isRoomEncrypted == false) {
             NotEncryptedBadge()
             Spacer(Modifier.height(8.dp))
         }

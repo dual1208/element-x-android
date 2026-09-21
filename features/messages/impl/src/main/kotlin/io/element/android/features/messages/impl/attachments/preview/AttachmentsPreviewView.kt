@@ -44,6 +44,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.messages.impl.R
@@ -534,6 +535,7 @@ private fun AttachmentsPreviewBottomActions(
         onRequestFocus = {},
         onSendMessage = onSendClick,
         showTextFormatting = false,
+        showNotEncryptedBadge = !ManagedFamilyConfig.ENABLED,
         onResetComposerMode = {},
         onAddAttachment = {},
         onDismissTextFormatting = {},
