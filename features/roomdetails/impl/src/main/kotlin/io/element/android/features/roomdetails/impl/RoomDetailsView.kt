@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import im.vector.app.features.analytics.plan.Interaction
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.roomcall.api.hasPermissionToJoin
@@ -179,10 +180,12 @@ fun RoomDetailsView(
                     )
                 }
             }
-            BadgeList(
-                roomBadge = state.roomBadges,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            )
+            if (!ManagedFamilyConfig.ENABLED) {
+                BadgeList(
+                    roomBadge = state.roomBadges,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+            }
             Spacer(Modifier.height(32.dp))
             MainActionsSection(
                 state = state,
