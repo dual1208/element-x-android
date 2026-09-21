@@ -94,11 +94,11 @@ dependencies {
     testImplementation(libs.androidx.camera.lifecycle)
 }
 
-val familyClientCertificate = layout.projectDirectory.file("src/main/assets/family-client.p12")
 val verifyFamilyClientCertificate by tasks.registering {
-    inputs.file(familyClientCertificate).optional()
+    val certificateFile = layout.projectDirectory.file("src/main/assets/family-client.p12").asFile
+    inputs.file(certificateFile).optional()
     doLast {
-        check(familyClientCertificate.asFile.isFile) {
+        check(certificateFile.isFile) {
             "Managed family builds require features/login/impl/src/main/assets/family-client.p12"
         }
     }
