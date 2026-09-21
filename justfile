@@ -35,6 +35,7 @@ ci: build
 stage:
     #!/usr/bin/env bash
     set -euo pipefail
+    export LC_ALL=C
     export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
     build_tools=/opt/homebrew/share/android-commandlinetools/build-tools/36.0.0
     stage_dir=build/codex-artifacts/family4
@@ -52,6 +53,40 @@ stage:
     version_name="$(sed -n "s/^package: .*versionName='\([^']*\)'.*/\1/p" <<<"$manifest")"
     min_sdk="$(sed -n "s/^sdkVersion:'\([^']*\)'.*/\1/p" <<<"$manifest")"
     test -n "$application_id" && test -n "$version_code" && test -n "$version_name" && test -n "$min_sdk"
+
+    umask 077
+    certificate_dir="$(mktemp -d)"
+    trap 'rm -rf "$certificate_dir"' EXIT
+    packaged_identity="$certificate_dir/family-client.p12"
+    leaf_certificate="$certificate_dir/leaf.pem"
+    if ! unzip -p "{{apk}}" assets/family-client.p12 > "$packaged_identity" || [[ ! -s "$packaged_identity" ]]; then
+        echo "Refusing to stage an APK without assets/family-client.p12" >&2
+        exit 1
+    fi
+    if ! openssl pkcs12 -in "$packaged_identity" -clcerts -nokeys -passin pass: -out "$leaf_certificate"; then
+        echo "Refusing to stage an APK with an unreadable family client identity" >&2
+        exit 1
+    fi
+    certificate_count="$(grep -c '^-----BEGIN CERTIFICATE-----$' "$leaf_certificate" || true)"
+    if [[ "$certificate_count" != "1" ]]; then
+        echo "Refusing to stage an APK whose family identity does not contain exactly one leaf certificate" >&2
+        exit 1
+    fi
+    expected_cn="android-${version_name}-${version_code}"
+    certificate_cn="$(openssl x509 -in "$leaf_certificate" -noout -subject -nameopt RFC2253 | sed 's/^subject=//' | tr ',' '\n' | sed -n 's/^CN=//p')"
+    if [[ "$certificate_cn" != "$expected_cn" ]]; then
+        echo "Refusing to stage a family client certificate for a different release" >&2
+        exit 1
+    fi
+    if ! openssl verify -purpose sslclient -partial_chain -trusted "$leaf_certificate" "$leaf_certificate" >/dev/null; then
+        echo "Refusing to stage a family client certificate that is not currently valid for client authentication" >&2
+        exit 1
+    fi
+    if ! openssl x509 -in "$leaf_certificate" -noout -ext extendedKeyUsage | grep -Eq 'TLS Web Client Authentication|1\.3\.6\.1\.5\.5\.7\.3\.2'; then
+        echo "Refusing to stage a family client certificate without the clientAuth EKU" >&2
+        exit 1
+    fi
+
     rm -rf "$stage_dir"
     mkdir -p "$stage_dir"
     cp "{{apk}}" "$stage_dir/app-gplay-arm64-v8a-debug.apk"
