@@ -44,7 +44,7 @@ android {
     defaultConfig {
         applicationId = BuildTimeConfig.APPLICATION_ID
         targetSdk = Versions.TARGET_SDK
-        versionCode = Versions.VERSION_CODE
+        versionCode = Versions.VERSION_CODE + if (BuildTimeConfig.MANAGED_FAMILY_MODE) 1 else 0
         versionName = Versions.VERSION_NAME
 
         // Keep abiFilter for the universalApk
