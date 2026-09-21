@@ -1,3 +1,4 @@
+import config.BuildTimeConfig
 import extension.buildConfigFieldStr
 import extension.setupDependencyInjection
 import extension.testCommonDependencies
@@ -75,6 +76,8 @@ dependencies {
     implementation(libs.androidx.browser)
     implementation(libs.androidx.webkit)
     implementation(libs.serialization.json)
+    implementation(platform(libs.network.okhttp.bom))
+    implementation(libs.network.okhttp)
     api(projects.features.login.api)
 
     testCommonDependencies(libs, true)
@@ -89,4 +92,20 @@ dependencies {
     testImplementation(projects.libraries.wellknown.test)
     testImplementation(libs.androidx.camera.camera2)
     testImplementation(libs.androidx.camera.lifecycle)
+}
+
+val familyClientCertificate = layout.projectDirectory.file("src/main/assets/family-client.p12")
+val verifyFamilyClientCertificate by tasks.registering {
+    inputs.file(familyClientCertificate).optional()
+    doLast {
+        check(familyClientCertificate.asFile.isFile) {
+            "Managed family builds require features/login/impl/src/main/assets/family-client.p12"
+        }
+    }
+}
+
+if (BuildTimeConfig.MANAGED_FAMILY_MODE) {
+    tasks.named("preBuild").configure {
+        dependsOn(verifyFamilyClientCertificate)
+    }
 }

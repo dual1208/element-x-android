@@ -46,6 +46,12 @@ interface MatrixAuthenticationService {
      */
     suspend fun login(username: String, password: String): Result<SessionId>
 
+    /**
+     * Restores credentials returned by a trusted authentication service into a new local session.
+     * [setHomeserver] must have been called first.
+     */
+    suspend fun loginWithSession(session: MatrixSession): Result<SessionId>
+
     /*
      * OAuth part.
      */

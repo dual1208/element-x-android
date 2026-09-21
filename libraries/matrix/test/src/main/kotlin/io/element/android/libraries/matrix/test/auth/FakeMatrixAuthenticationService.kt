@@ -12,6 +12,7 @@ import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.auth.ElementClassicSession
 import io.element.android.libraries.matrix.api.auth.MatrixAuthenticationService
 import io.element.android.libraries.matrix.api.auth.MatrixHomeServerDetails
+import io.element.android.libraries.matrix.api.auth.MatrixSession
 import io.element.android.libraries.matrix.api.auth.OAuthDetails
 import io.element.android.libraries.matrix.api.auth.OAuthPrompt
 import io.element.android.libraries.matrix.api.auth.qrlogin.MatrixQrCodeLoginData
@@ -58,6 +59,13 @@ class FakeMatrixAuthenticationService(
     }
 
     override suspend fun login(username: String, password: String): Result<SessionId> = simulateLongTask {
+        loginError?.let { Result.failure(it) } ?: run {
+            onAuthenticationListener?.invoke(matrixClient ?: FakeMatrixClient())
+            Result.success(A_USER_ID)
+        }
+    }
+
+    override suspend fun loginWithSession(session: MatrixSession): Result<SessionId> = simulateLongTask {
         loginError?.let { Result.failure(it) } ?: run {
             onAuthenticationListener?.invoke(matrixClient ?: FakeMatrixClient())
             Result.success(A_USER_ID)

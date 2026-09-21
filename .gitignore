@@ -112,3 +112,6 @@ lint/tmp/
 .DS_Store
 
 checkouts/**
+
+# Private managed-family mTLS identity, injected before building.
+/features/login/impl/src/main/assets/family-client.p12

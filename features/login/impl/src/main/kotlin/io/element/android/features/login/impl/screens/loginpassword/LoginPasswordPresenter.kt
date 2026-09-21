@@ -19,8 +19,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.login.impl.accountprovider.AccountProviderDataSource
 import io.element.android.features.login.impl.accountprovider.SaveAccountProviderToHistory
+import io.element.android.features.login.impl.managed.ManagedFamilyLoginService
 import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.matrix.api.auth.MatrixAuthenticationService
@@ -33,6 +35,7 @@ class LoginPasswordPresenter(
     @Assisted
     private val initialLogin: String,
     private val authenticationService: MatrixAuthenticationService,
+    private val managedFamilyLoginService: ManagedFamilyLoginService,
     private val accountProviderDataSource: AccountProviderDataSource,
     private val saveAccountProviderToHistory: SaveAccountProviderToHistory,
 ) : Presenter<LoginPasswordState> {
@@ -83,7 +86,16 @@ class LoginPasswordPresenter(
 
     private fun CoroutineScope.submit(formState: LoginFormState, loggedInState: MutableState<AsyncData<SessionId>>) = launch {
         loggedInState.value = AsyncData.Loading()
-        authenticationService.login(formState.login.trim(), formState.password)
+        val result = if (ManagedFamilyConfig.ENABLED) {
+            managedFamilyLoginService.login(formState.login.trim(), formState.password)
+                .fold(
+                    onSuccess = { authenticationService.loginWithSession(it) },
+                    onFailure = { Result.failure(it) },
+                )
+        } else {
+            authenticationService.login(formState.login.trim(), formState.password)
+        }
+        result
             .onSuccess { sessionId ->
                 saveAccountProviderToHistory()
                 loggedInState.value = AsyncData.Success(sessionId)

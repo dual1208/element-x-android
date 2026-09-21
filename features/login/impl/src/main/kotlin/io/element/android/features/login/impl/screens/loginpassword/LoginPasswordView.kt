@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.login.impl.R
@@ -125,17 +126,18 @@ fun LoginPasswordView(
                 .verticalScroll(state = scrollState)
                 .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
         ) {
-            // Title
-            IconTitleSubtitleMolecule(
-                modifier = Modifier.padding(top = 20.dp, start = 16.dp, end = 16.dp),
-                iconStyle = BigIcon.Style.Default(CompoundIcons.UserProfileSolid()),
-                title = stringResource(
-                    id = R.string.screen_account_provider_signin_title,
-                    state.accountProvider.title
-                ),
-                subTitle = stringResource(id = R.string.screen_login_subtitle)
-            )
-            Spacer(Modifier.height(40.dp))
+            if (!ManagedFamilyConfig.ENABLED) {
+                IconTitleSubtitleMolecule(
+                    modifier = Modifier.padding(top = 20.dp, start = 16.dp, end = 16.dp),
+                    iconStyle = BigIcon.Style.Default(CompoundIcons.UserProfileSolid()),
+                    title = stringResource(
+                        id = R.string.screen_account_provider_signin_title,
+                        state.accountProvider.title
+                    ),
+                    subTitle = stringResource(id = R.string.screen_login_subtitle)
+                )
+                Spacer(Modifier.height(40.dp))
+            }
             LoginForm(
                 state = state,
                 isLoading = isLoading,
@@ -152,7 +154,9 @@ fun LoginPasswordView(
             ) {
                 ButtonColumnMolecule {
                     Button(
-                        text = stringResource(CommonStrings.action_continue),
+                        text = stringResource(
+                            if (ManagedFamilyConfig.ENABLED) R.string.family_login_action else CommonStrings.action_continue
+                        ),
                         showProgress = isLoading,
                         onClick = ::submit,
                         enabled = state.submitEnabled || isLoading,
@@ -187,7 +191,9 @@ private fun LoginForm(
 
     Column {
         TextField(
-            label = stringResource(R.string.screen_login_form_header),
+            label = stringResource(
+                if (ManagedFamilyConfig.ENABLED) R.string.family_login_username else R.string.screen_login_form_header
+            ),
             value = loginFieldState,
             enabled = !isLoading,
             modifier = Modifier
@@ -205,7 +211,7 @@ private fun LoginForm(
                 eventSink(LoginPasswordEvent.SetLogin(sanitized))
             },
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
+                keyboardType = if (ManagedFamilyConfig.ENABLED) KeyboardType.Text else KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
             keyboardActions = KeyboardActions(onNext = {

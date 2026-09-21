@@ -13,7 +13,9 @@ import io.element.android.appconfig.AuthenticationConfig
 import io.element.android.features.login.impl.accountprovider.AccountProviderDataSource
 import io.element.android.features.login.impl.accountprovider.SaveAccountProviderToHistory
 import io.element.android.features.login.impl.accountprovider.anAccountProviderDataSource
+import io.element.android.features.login.impl.managed.ManagedFamilyLoginService
 import io.element.android.libraries.architecture.AsyncData
+import io.element.android.libraries.matrix.api.auth.MatrixSession
 import io.element.android.libraries.matrix.api.core.SessionId
 import io.element.android.libraries.matrix.test.AN_EXCEPTION
 import io.element.android.libraries.matrix.test.A_PASSWORD
@@ -187,12 +189,24 @@ class LoginPasswordPresenterTest {
     private fun createLoginPasswordPresenter(
         initialLogin: String = "",
         authenticationService: FakeMatrixAuthenticationService = FakeMatrixAuthenticationService(),
+        managedFamilyLoginService: ManagedFamilyLoginService = successfulManagedFamilyLoginService(),
         accountProviderDataSource: AccountProviderDataSource = anAccountProviderDataSource(),
         appPreferencesStore: AppPreferencesStore = InMemoryAppPreferencesStore(),
     ): LoginPasswordPresenter = LoginPasswordPresenter(
         initialLogin = initialLogin,
         authenticationService = authenticationService,
+        managedFamilyLoginService = managedFamilyLoginService,
         accountProviderDataSource = accountProviderDataSource,
         saveAccountProviderToHistory = SaveAccountProviderToHistory(accountProviderDataSource, appPreferencesStore),
+    )
+}
+
+private fun successfulManagedFamilyLoginService() = object : ManagedFamilyLoginService {
+    override suspend fun login(username: String, password: String): Result<MatrixSession> = Result.success(
+        MatrixSession(
+            accessToken = "anAccessToken",
+            userId = "@user:example.org",
+            deviceId = "aDeviceId",
+        )
     )
 }

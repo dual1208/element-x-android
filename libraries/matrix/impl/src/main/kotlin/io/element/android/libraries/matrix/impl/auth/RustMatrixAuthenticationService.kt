@@ -24,6 +24,7 @@ import io.element.android.libraries.matrix.api.auth.AuthenticationException
 import io.element.android.libraries.matrix.api.auth.ElementClassicSession
 import io.element.android.libraries.matrix.api.auth.MatrixAuthenticationService
 import io.element.android.libraries.matrix.api.auth.MatrixHomeServerDetails
+import io.element.android.libraries.matrix.api.auth.MatrixSession
 import io.element.android.libraries.matrix.api.auth.OAuthDetails
 import io.element.android.libraries.matrix.api.auth.OAuthPrompt
 import io.element.android.libraries.matrix.api.auth.SessionRestorationException
@@ -57,6 +58,8 @@ import org.matrix.rustcomponents.sdk.QrCodeDecodeException
 import org.matrix.rustcomponents.sdk.QrLoginProgress
 import org.matrix.rustcomponents.sdk.QrLoginProgressListener
 import org.matrix.rustcomponents.sdk.SecretsBundleWithUserId
+import org.matrix.rustcomponents.sdk.Session
+import org.matrix.rustcomponents.sdk.SlidingSyncVersion
 import timber.log.Timber
 import uniffi.matrix_sdk.OAuthAuthorizationData
 import kotlin.time.Duration.Companion.seconds
@@ -179,6 +182,43 @@ class RustMatrixAuthenticationService(
                 SessionId(sessionData.userId)
             }.mapFailure { failure ->
                 Timber.e(failure, "Failed to login")
+                failure.mapAuthenticationException()
+            }
+        }
+
+    override suspend fun loginWithSession(session: MatrixSession): Result<SessionId> =
+        withContext(coroutineDispatchers.io) {
+            runCatchingExceptions {
+                val client = currentClient ?: error("You need to call `setHomeserver()` first")
+                val currentSessionPaths = sessionPaths ?: error("You need to call `setHomeserver()` first")
+                client.restoreSession(
+                    Session(
+                        accessToken = session.accessToken,
+                        refreshToken = null,
+                        userId = session.userId,
+                        deviceId = session.deviceId,
+                        homeserverUrl = client.homeserver(),
+                        slidingSyncVersion = SlidingSyncVersion.NATIVE,
+                        oauthData = null,
+                    )
+                )
+                ensureNotAlreadyLoggedIn(client)
+                val sessionData = client.session().toSessionData(
+                    isTokenValid = true,
+                    loginType = LoginType.DIRECT,
+                    passphrase = pendingKey.formattedAsString(),
+                    sessionPaths = currentSessionPaths,
+                )
+                val matrixClient = rustMatrixClientFactory.create(client, sessionData, isMessageSearchAvailable())
+
+                clientEnterpriseHook(matrixClient)
+                newMatrixClientObservers.forEach { it.invoke(matrixClient) }
+                sessionStore.addSession(sessionData)
+                clear(destroyClient = false)
+
+                SessionId(sessionData.userId)
+            }.mapFailure { failure ->
+                Timber.e(failure, "Failed to restore authenticated session")
                 failure.mapAuthenticationException()
             }
         }

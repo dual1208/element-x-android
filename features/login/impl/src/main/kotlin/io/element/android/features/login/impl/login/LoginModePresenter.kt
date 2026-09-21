@@ -13,6 +13,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import dev.zacsweers.metro.Inject
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.login.impl.accountprovider.SaveAccountProviderToHistory
 import io.element.android.features.login.impl.error.ChangeServerError
 import io.element.android.features.login.impl.localnetwork.LocalNetworkPermissionGate
@@ -87,6 +88,8 @@ class LoginModePresenter(
                     }
                 }.getOrThrow()
             when {
+                ManagedFamilyConfig.ENABLED && request.isAccountCreation -> throw AccountCreationNotSupported()
+                ManagedFamilyConfig.ENABLED -> LoginMode.PasswordLogin
                 matrixHomeServerDetails.supportsOAuthLogin -> {
                     val oAuthPrompt = if (request.isAccountCreation) OAuthPrompt.Create else OAuthPrompt.Login
                     LoginMode.OAuth(
