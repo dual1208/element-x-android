@@ -104,6 +104,7 @@ fun aValidNotificationSettingsState(
     eventSink: (NotificationSettingsEvent) -> Unit = {},
 ) = NotificationSettingsState(
     matrixSettings = NotificationSettingsState.MatrixSettings.Valid(
+        messageNotificationsEnabled = true,
         atRoomNotificationsEnabled = atRoomNotificationsEnabled,
         callNotificationsEnabled = callNotificationsEnabled,
         inviteForMeNotificationsEnabled = inviteForMeNotificationsEnabled,

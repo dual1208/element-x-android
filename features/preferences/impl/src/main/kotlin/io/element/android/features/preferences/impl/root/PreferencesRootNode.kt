@@ -12,6 +12,7 @@ import android.app.Activity
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import io.element.android.appconfig.ManagedFamilyConfig
 import com.bumble.appyx.core.modality.BuildContext
 import com.bumble.appyx.core.node.Node
 import com.bumble.appyx.core.plugin.Plugin
@@ -95,7 +96,7 @@ class PreferencesRootNode(
             onOpenUserProfile = callback::navigateToUserProfile,
             onOpenBlockedUsers = callback::navigateToBlockedUsers,
             onSignOutClick = {
-                if (state.directLogoutState.canDoDirectSignOut) {
+                if (ManagedFamilyConfig.ENABLED || state.directLogoutState.canDoDirectSignOut) {
                     state.directLogoutState.eventSink(DirectLogoutEvent.Logout(ignoreSdkError = false))
                 } else {
                     callback.startSignOutFlow()

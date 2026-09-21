@@ -13,6 +13,7 @@ import io.element.android.libraries.preferences.api.store.NotificationSound
 sealed interface NotificationSettingsEvent {
     data object RefreshSystemNotificationsEnabled : NotificationSettingsEvent
     data class SetNotificationsEnabled(val enabled: Boolean) : NotificationSettingsEvent
+    data class SetMessageNotificationsEnabled(val enabled: Boolean) : NotificationSettingsEvent
     data class SetAtRoomNotificationsEnabled(val enabled: Boolean) : NotificationSettingsEvent
     data class SetCallNotificationsEnabled(val enabled: Boolean) : NotificationSettingsEvent
     data class SetInviteForMeNotificationsEnabled(val enabled: Boolean) : NotificationSettingsEvent

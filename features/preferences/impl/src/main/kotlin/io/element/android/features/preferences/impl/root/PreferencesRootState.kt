@@ -26,6 +26,7 @@ data class PreferencesRootState(
     val canReportBug: Boolean,
     val showLinkNewDevice: Boolean,
     val showAnalyticsSettings: Boolean,
+    val showAdvancedSettings: Boolean,
     val showDeveloperSettings: Boolean,
     val canDeactivateAccount: Boolean,
     val nbOfBlockedUsers: Int,

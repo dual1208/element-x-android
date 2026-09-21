@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_active">已启用</string>
+    <string name="a11y_inactive">已停用</string>
+    <string name="a11y_state_collapsed">已收起</string>
+    <string name="a11y_state_expanded">已展开</string>
+</resources>

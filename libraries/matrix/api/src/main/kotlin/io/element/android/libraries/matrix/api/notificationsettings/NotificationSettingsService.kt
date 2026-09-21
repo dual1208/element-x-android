@@ -96,12 +96,29 @@ interface NotificationSettingsService {
     /** Whether incoming calls generate a notification. */
     suspend fun isCallEnabled(): Result<Boolean>
 
+    /** Managed-room variant that can scope MatrixRTC rules to [roomId]. */
+    suspend fun isCallEnabled(roomId: RoomId): Result<Boolean> = isCallEnabled()
+
     /**
      * Sets whether incoming calls generate a notification.
      *
      * @param enabled true to be notified of incoming calls.
      */
     suspend fun setCallEnabled(enabled: Boolean): Result<Unit>
+
+    /** Managed-room variant that keeps legacy and MatrixRTC call rules synchronized. */
+    suspend fun setCallEnabled(roomId: RoomId, enabled: Boolean): Result<Unit> = setCallEnabled(enabled)
+
+    /** Whether plain `m.room.message` events in [roomId] generate notifications. */
+    suspend fun isMessageEnabled(roomId: RoomId): Result<Boolean> =
+        Result.failure(UnsupportedOperationException("Message notification rules are not supported"))
+
+    /**
+     * Sets a dedicated message-only override rule for [roomId]. This rule deliberately does not
+     * match call events, so call notifications remain independently controlled by [setCallEnabled].
+     */
+    suspend fun setMessageEnabled(roomId: RoomId, enabled: Boolean): Result<Unit> =
+        Result.failure(UnsupportedOperationException("Message notification rules are not supported"))
 
     /** Whether room invitations generate a notification. */
     suspend fun isInviteForMeEnabled(): Result<Boolean>

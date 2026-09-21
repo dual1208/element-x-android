@@ -291,11 +291,13 @@ private fun ColumnScope.GeneralSection(
     onSignOutClick: () -> Unit,
     onDeactivateClick: () -> Unit,
 ) {
-    ListItem(
-        content = { Text(stringResource(id = CommonStrings.common_advanced_settings)) },
-        leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Settings())),
-        onClick = onOpenAdvancedSettings,
-    )
+    if (state.showAdvancedSettings) {
+        ListItem(
+            content = { Text(stringResource(id = CommonStrings.common_advanced_settings)) },
+            leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Settings())),
+            onClick = onOpenAdvancedSettings,
+        )
+    }
     if (state.showLabsItem) {
         ListItem(
             content = { Text(stringResource(id = R.string.screen_labs_title)) },

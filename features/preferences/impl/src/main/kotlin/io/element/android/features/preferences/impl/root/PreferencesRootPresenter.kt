@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import dev.zacsweers.metro.Inject
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.enterprise.api.SessionEnterpriseService
 import io.element.android.features.logout.api.direct.DirectLogoutState
 import io.element.android.features.preferences.impl.userstatus.UserStatusState
@@ -145,18 +146,19 @@ class PreferencesRootPresenter(
             myUser = matrixUser.value,
             userStatusState = userStatusState,
             version = remember { versionFormatter.get() },
-            isMultiAccountEnabled = isMultiAccountEnabled,
+            isMultiAccountEnabled = isMultiAccountEnabled && !ManagedFamilyConfig.ENABLED,
             otherSessions = otherSessions,
-            showSecureBackup = !canVerifyUserSession,
-            showSecureBackupBadge = showSecureBackupIndicator,
-            accountManagementUrl = accountManagementUrl.value,
-            showAnalyticsSettings = hasAnalyticsProviders,
-            canReportBug = canReportBug,
-            showLinkNewDevice = showLinkNewDevice,
-            showDeveloperSettings = showDeveloperSettings,
-            canDeactivateAccount = canDeactivateAccount,
+            showSecureBackup = !ManagedFamilyConfig.ENABLED && !canVerifyUserSession,
+            showSecureBackupBadge = !ManagedFamilyConfig.ENABLED && showSecureBackupIndicator,
+            accountManagementUrl = accountManagementUrl.value.takeUnless { ManagedFamilyConfig.ENABLED },
+            showAnalyticsSettings = !ManagedFamilyConfig.ENABLED && hasAnalyticsProviders,
+            canReportBug = !ManagedFamilyConfig.ENABLED && canReportBug,
+            showLinkNewDevice = !ManagedFamilyConfig.ENABLED && showLinkNewDevice,
+            showAdvancedSettings = !ManagedFamilyConfig.ENABLED,
+            showDeveloperSettings = !ManagedFamilyConfig.ENABLED && showDeveloperSettings,
+            canDeactivateAccount = !ManagedFamilyConfig.ENABLED && canDeactivateAccount,
             nbOfBlockedUsers = nbOfBlockedUsers,
-            showLabsItem = showLabsItem,
+            showLabsItem = !ManagedFamilyConfig.ENABLED && showLabsItem,
             directLogoutState = directLogoutState,
             snackbarMessage = snackbarMessage,
             eventSink = ::handleEvent,

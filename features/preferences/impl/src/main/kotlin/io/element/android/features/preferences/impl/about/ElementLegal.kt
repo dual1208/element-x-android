@@ -9,6 +9,7 @@
 package io.element.android.features.preferences.impl.about
 
 import androidx.annotation.StringRes
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.preferences.impl.BuildConfig
 import io.element.android.libraries.ui.strings.CommonStrings
 import kotlinx.collections.immutable.ImmutableList
@@ -28,6 +29,7 @@ sealed class ElementLegal(
 }
 
 fun getAllLegals(): ImmutableList<ElementLegal> {
+    if (ManagedFamilyConfig.ENABLED) return persistentListOf()
     return persistentListOf(
         ElementLegal.Copyright,
         ElementLegal.AcceptableUsePolicy,

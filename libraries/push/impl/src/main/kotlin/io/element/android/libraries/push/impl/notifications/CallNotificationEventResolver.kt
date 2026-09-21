@@ -61,15 +61,19 @@ class DefaultCallNotificationEventResolver(
         val content = notificationData.content as? NotificationContent.MessageLike.RtcNotification
             ?: throw NotificationResolverException.UnknownError("content is not a call notify")
 
+        val client = clientProvider.getOrRestore(sessionId).getOrNull()
+            ?: throw NotificationResolverException.UnknownError("Session $sessionId not found")
+        if (!client.notificationSettingsService.isCallEnabled(notificationData.roomId).getOrDefault(true)) {
+            Timber.d("Ignoring call notification in ${notificationData.roomId}: call reminders are disabled")
+            throw NotificationResolverException.EventFilteredOut
+        }
+
         val previousRingingCallStatus = appForegroundStateService.hasRingingCall.value
         // We need the sync service working to get the updated room info
         val isRoomCallActive = runCatchingExceptions {
             if (content.type == RtcNotificationType.RING) {
                 appForegroundStateService.updateHasRingingCall(true)
 
-                val client = clientProvider.getOrRestore(
-                    sessionId
-                ).getOrNull() ?: throw NotificationResolverException.UnknownError("Session $sessionId not found")
                 val room = client.getRoom(
                     notificationData.roomId
                 ) ?: throw NotificationResolverException.UnknownError("Room ${notificationData.roomId} not found")

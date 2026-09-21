@@ -47,6 +47,7 @@ data class NotificationSettingsState(
     sealed interface MatrixSettings {
         data object Uninitialized : MatrixSettings
         data class Valid(
+            val messageNotificationsEnabled: Boolean,
             val atRoomNotificationsEnabled: Boolean,
             val callNotificationsEnabled: Boolean,
             val inviteForMeNotificationsEnabled: Boolean,

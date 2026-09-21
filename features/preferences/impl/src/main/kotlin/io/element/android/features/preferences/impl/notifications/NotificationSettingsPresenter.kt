@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import dev.zacsweers.metro.Inject
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.features.preferences.impl.R
 import io.element.android.libraries.architecture.AsyncAction
 import io.element.android.libraries.architecture.AsyncData
@@ -30,6 +31,7 @@ import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.di.annotations.SessionCoroutineScope
 import io.element.android.libraries.fullscreenintent.api.FullScreenIntentPermissionsState
 import io.element.android.libraries.matrix.api.MatrixClient
+import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.notificationsettings.NotificationSettingsService
 import io.element.android.libraries.matrix.api.room.RoomNotificationMode
 import io.element.android.libraries.preferences.api.store.AppPreferencesStore
@@ -55,6 +57,10 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
 import kotlin.time.Duration.Companion.seconds
 
@@ -203,6 +209,9 @@ class NotificationSettingsPresenter(
                 }
                 is NotificationSettingsEvent.SetCallNotificationsEnabled -> {
                     localCoroutineScope.setCallNotificationsEnabled(event.enabled, changeNotificationSettingAction)
+                }
+                is NotificationSettingsEvent.SetMessageNotificationsEnabled -> {
+                    localCoroutineScope.setMessageNotificationsEnabled(event.enabled, changeNotificationSettingAction)
                 }
                 is NotificationSettingsEvent.SetInviteForMeNotificationsEnabled -> {
                     localCoroutineScope.setInviteForMeNotificationsEnabled(event.enabled, changeNotificationSettingAction)
@@ -439,6 +448,21 @@ class NotificationSettingsPresenter(
     }
 
     private fun CoroutineScope.fetchSettings(target: MutableState<NotificationSettingsState.MatrixSettings>) = launch {
+        if (ManagedFamilyConfig.ENABLED) {
+            val roomId = assignedRoomId().getOrThrow()
+            val roomSettings = notificationSettingsService
+                .getRoomNotificationSettings(roomId, isEncrypted = false, isOneToOne = false)
+                .getOrThrow()
+            target.value = NotificationSettingsState.MatrixSettings.Valid(
+                messageNotificationsEnabled = notificationSettingsService.isMessageEnabled(roomId).getOrThrow(),
+                atRoomNotificationsEnabled = notificationSettingsService.isRoomMentionEnabled().getOrThrow(),
+                callNotificationsEnabled = notificationSettingsService.isCallEnabled(roomId).getOrThrow(),
+                inviteForMeNotificationsEnabled = notificationSettingsService.isInviteForMeEnabled().getOrThrow(),
+                defaultGroupNotificationMode = roomSettings.mode,
+                defaultOneToOneNotificationMode = roomSettings.mode,
+            )
+            return@launch
+        }
         val groupDefaultMode = notificationSettingsService.getDefaultRoomNotificationMode(isEncrypted = false, isOneToOne = false).getOrThrow()
         val encryptedGroupDefaultMode = notificationSettingsService.getDefaultRoomNotificationMode(isEncrypted = true, isOneToOne = false).getOrThrow()
 
@@ -455,6 +479,7 @@ class NotificationSettingsPresenter(
         val inviteForMeNotificationsEnabled = notificationSettingsService.isInviteForMeEnabled().getOrThrow()
 
         target.value = NotificationSettingsState.MatrixSettings.Valid(
+            messageNotificationsEnabled = groupDefaultMode != RoomNotificationMode.MUTE || oneToOneDefaultMode != RoomNotificationMode.MUTE,
             atRoomNotificationsEnabled = atRoomNotificationsEnabled,
             callNotificationsEnabled = callNotificationsEnabled,
             inviteForMeNotificationsEnabled = inviteForMeNotificationsEnabled,
@@ -502,8 +527,32 @@ class NotificationSettingsPresenter(
 
     private fun CoroutineScope.setCallNotificationsEnabled(enabled: Boolean, action: MutableState<AsyncAction<Unit>>) = launch {
         action.runUpdatingStateNoSuccess {
-            notificationSettingsService.setCallEnabled(enabled)
+            if (ManagedFamilyConfig.ENABLED) {
+                notificationSettingsService.setCallEnabled(assignedRoomId().getOrThrow(), enabled)
+            } else {
+                notificationSettingsService.setCallEnabled(enabled)
+            }
         }
+    }
+
+    private fun CoroutineScope.setMessageNotificationsEnabled(enabled: Boolean, action: MutableState<AsyncAction<Unit>>) = launch {
+        action.runUpdatingStateNoSuccess {
+            val roomId = assignedRoomId().getOrThrow()
+            notificationSettingsService.setMessageEnabled(roomId = roomId, enabled = enabled)
+        }
+    }
+
+    private suspend fun assignedRoomId(): Result<RoomId> = runCatchingExceptions {
+        val content = matrixClient.getAccountData(ManagedFamilyConfig.ASSIGNED_ROOM_ACCOUNT_DATA_TYPE).getOrThrow()
+        val value = content
+            ?.let(Json::parseToJsonElement)
+            ?.jsonObject
+            ?.get("room_id")
+            ?.jsonPrimitive
+            ?.contentOrNull
+            ?.takeIf { it.startsWith('!') && it.length > 1 }
+            ?: error("No assigned family room")
+        RoomId(value)
     }
 
     private fun CoroutineScope.setInviteForMeNotificationsEnabled(enabled: Boolean, action: MutableState<AsyncAction<Unit>>) = launch {

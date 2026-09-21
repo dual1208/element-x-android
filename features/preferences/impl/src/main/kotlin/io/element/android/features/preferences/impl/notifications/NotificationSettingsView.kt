@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.preferences.impl.R
@@ -90,24 +91,56 @@ fun NotificationSettingsView(
                 onDismissError = { state.eventSink(NotificationSettingsEvent.ClearConfigurationMismatchError) },
             )
             NotificationSettingsState.MatrixSettings.Uninitialized -> return@PreferencePage
-            is NotificationSettingsState.MatrixSettings.Valid -> NotificationSettingsContentView(
-                matrixSettings = state.matrixSettings,
-                state = state,
-                onNotificationsEnabledChange = { state.eventSink(NotificationSettingsEvent.SetNotificationsEnabled(it)) },
-                onGroupChatsClick = { onOpenEditDefault(false) },
-                onDirectChatsClick = { onOpenEditDefault(true) },
-                onMentionNotificationsChange = { state.eventSink(NotificationSettingsEvent.SetAtRoomNotificationsEnabled(it)) },
-                // TODO We are removing the call notification toggle until support for call notifications has been added
-//                onCallsNotificationsChanged = { state.eventSink(NotificationSettingsEvent.SetCallNotificationsEnabled(it)) },
-                onInviteForMeNotificationsChange = { state.eventSink(NotificationSettingsEvent.SetInviteForMeNotificationsEnabled(it)) },
-                onTroubleshootNotificationsClick = onTroubleshootNotificationsClick,
-            )
+            is NotificationSettingsState.MatrixSettings.Valid -> if (ManagedFamilyConfig.ENABLED) {
+                ManagedFamilyNotificationSettingsContent(
+                    matrixSettings = state.matrixSettings,
+                    state = state,
+                )
+            } else {
+                NotificationSettingsContentView(
+                    matrixSettings = state.matrixSettings,
+                    state = state,
+                    onNotificationsEnabledChange = { state.eventSink(NotificationSettingsEvent.SetNotificationsEnabled(it)) },
+                    onGroupChatsClick = { onOpenEditDefault(false) },
+                    onDirectChatsClick = { onOpenEditDefault(true) },
+                    onMentionNotificationsChange = { state.eventSink(NotificationSettingsEvent.SetAtRoomNotificationsEnabled(it)) },
+                    onInviteForMeNotificationsChange = { state.eventSink(NotificationSettingsEvent.SetInviteForMeNotificationsEnabled(it)) },
+                    onTroubleshootNotificationsClick = onTroubleshootNotificationsClick,
+                )
+            }
         }
         AsyncActionView(
             async = state.changeNotificationSettingAction,
             errorMessage = { stringResource(R.string.screen_notification_settings_edit_failed_updating_default_mode) },
             onErrorDismiss = { state.eventSink(NotificationSettingsEvent.ClearNotificationChangeError) },
             onSuccess = {},
+        )
+    }
+}
+
+@Composable
+private fun ManagedFamilyNotificationSettingsContent(
+    matrixSettings: NotificationSettingsState.MatrixSettings.Valid,
+    state: NotificationSettingsState,
+) {
+    val context = LocalContext.current
+    if (!state.appSettings.systemNotificationsEnabled) {
+        ListItem(
+            leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.NotificationsOffSolid())),
+            content = { Text(stringResource(id = R.string.screen_notification_settings_system_notifications_turned_off)) },
+            onClick = { context.startNotificationSettingsIntent() },
+        )
+    }
+    PreferenceCategory {
+        PreferenceSwitch(
+            title = stringResource(id = R.string.managed_family_message_notifications),
+            isChecked = matrixSettings.messageNotificationsEnabled,
+            onCheckedChange = { state.eventSink(NotificationSettingsEvent.SetMessageNotificationsEnabled(it)) },
+        )
+        PreferenceSwitch(
+            title = stringResource(id = R.string.managed_family_call_notifications),
+            isChecked = matrixSettings.callNotificationsEnabled,
+            onCheckedChange = { state.eventSink(NotificationSettingsEvent.SetCallNotificationsEnabled(it)) },
         )
     }
 }

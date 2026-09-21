@@ -31,15 +31,15 @@ android {
     defaultConfig {
         buildConfigFieldStr(
             name = "URL_COPYRIGHT",
-            value = BuildTimeConfig.URL_COPYRIGHT ?: "https://element.io/copyright",
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) "" else BuildTimeConfig.URL_COPYRIGHT ?: "https://element.io/copyright",
         )
         buildConfigFieldStr(
             name = "URL_ACCEPTABLE_USE",
-            value = BuildTimeConfig.URL_ACCEPTABLE_USE ?: "https://element.io/acceptable-use-policy-terms",
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) "" else BuildTimeConfig.URL_ACCEPTABLE_USE ?: "https://element.io/acceptable-use-policy-terms",
         )
         buildConfigFieldStr(
             name = "URL_PRIVACY",
-            value = BuildTimeConfig.URL_PRIVACY ?: "https://element.io/privacy",
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) "" else BuildTimeConfig.URL_PRIVACY ?: "https://element.io/privacy",
         )
     }
 }

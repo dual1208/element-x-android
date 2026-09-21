@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_sending_failure_invalid_mime_type">无效的文件类型：%s</string>
+    <string name="error_sending_failure_missing_media_content">缺少媒体内容</string>
+    <string name="error_sending_failure_other">错误详情：%s</string>
+    <string name="error_sending_failure_sending_from_unverified_device">无法从未验证的设备发送</string>
+    <string name="error_sending_failure_unknown">未知错误</string>
+</resources>

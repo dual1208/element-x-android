@@ -21,9 +21,19 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.matrix.rustcomponents.sdk.Action
 import org.matrix.rustcomponents.sdk.Client
 import org.matrix.rustcomponents.sdk.NotificationSettingsDelegate
 import org.matrix.rustcomponents.sdk.NotificationSettingsException
+import org.matrix.rustcomponents.sdk.PushCondition
+import org.matrix.rustcomponents.sdk.RuleKind
 import timber.log.Timber
 
 class RustNotificationSettingsService(
@@ -31,6 +41,11 @@ class RustNotificationSettingsService(
     sessionCoroutineScope: CoroutineScope,
     private val dispatchers: CoroutineDispatchers,
 ) : NotificationSettingsService {
+    private companion object {
+        const val FAMILY_MESSAGE_RULE_ID = "io.familychat.message_notifications"
+        const val FAMILY_CALL_RULE_ID = "io.familychat.call-alerts.stable"
+        const val FAMILY_CALL_UNSTABLE_RULE_ID = "io.familychat.call-alerts.unstable"
+    }
     private val notificationSettings by suspendLazy(sessionCoroutineScope.coroutineContext + dispatchers.io) { client.getNotificationSettings() }
     private val _notificationSettingsChangeFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     override val notificationSettingsChangeFlow: SharedFlow<Unit> = _notificationSettingsChangeFlow.asSharedFlow()
@@ -113,10 +128,92 @@ class RustNotificationSettingsService(
         }
     }
 
+    override suspend fun isCallEnabled(roomId: RoomId): Result<Boolean> = withContext(dispatchers.io) {
+        runCatchingExceptions {
+            val rules = customOverrideRules()
+            rules.findEnabled(FAMILY_CALL_RULE_ID)
+                ?: rules.findEnabled(FAMILY_CALL_UNSTABLE_RULE_ID)
+                ?: notificationSettings.await().isCallEnabled()
+        }
+    }
+
     override suspend fun setCallEnabled(enabled: Boolean): Result<Unit> = withContext(dispatchers.io) {
         runCatchingExceptions {
             notificationSettings.await().setCallEnabled(enabled)
         }
+    }
+
+    override suspend fun setCallEnabled(roomId: RoomId, enabled: Boolean): Result<Unit> = withContext(dispatchers.io) {
+        runCatchingExceptions {
+            notificationSettings.await().setCallEnabled(enabled)
+            setTypedOverrideRule(FAMILY_CALL_RULE_ID, roomId, "m.rtc.notification", enabled)
+            setTypedOverrideRule(FAMILY_CALL_UNSTABLE_RULE_ID, roomId, "org.matrix.msc4075.rtc.notification", enabled)
+            _notificationSettingsChangeFlow.tryEmit(Unit)
+            Unit
+        }
+    }
+
+    override suspend fun isMessageEnabled(roomId: RoomId): Result<Boolean> = withContext(dispatchers.io) {
+        runCatchingExceptions {
+            val rule = customOverrideRules()
+                .firstOrNull {
+                    it.jsonObject["rule_id"]?.jsonPrimitive?.content == FAMILY_MESSAGE_RULE_ID
+                }
+                ?.jsonObject
+            if (rule == null) {
+                notificationSettings.await()
+                    .getRoomNotificationSettings(roomId.value, false, false)
+                    .mode != org.matrix.rustcomponents.sdk.RoomNotificationMode.MUTE
+            } else {
+                rule["enabled"]?.jsonPrimitive?.booleanOrNull != false &&
+                    rule["actions"]?.jsonArray?.any { (it as? JsonPrimitive)?.contentOrNull == "notify" } == true
+            }
+        }
+    }
+
+    override suspend fun setMessageEnabled(roomId: RoomId, enabled: Boolean): Result<Unit> = withContext(dispatchers.io) {
+        runCatchingExceptions {
+            notificationSettings.await().setCustomPushRule(
+                FAMILY_MESSAGE_RULE_ID,
+                RuleKind.Override,
+                if (enabled) listOf(Action.Notify) else emptyList(),
+                listOf(
+                    PushCondition.EventMatch("room_id", roomId.value),
+                    PushCondition.EventMatch("type", "m.room.message"),
+                ),
+            )
+            _notificationSettingsChangeFlow.tryEmit(Unit)
+            Unit
+        }
+    }
+
+    private suspend fun customOverrideRules() = notificationSettings.await().getRawPushRules()
+        ?.let(Json::parseToJsonElement)
+        ?.jsonObject
+        ?.get("global")
+        ?.jsonObject
+        ?.get("override")
+        ?.jsonArray
+        .orEmpty()
+
+    private fun List<kotlinx.serialization.json.JsonElement>.findEnabled(ruleId: String): Boolean? =
+        firstOrNull { it.jsonObject["rule_id"]?.jsonPrimitive?.content == ruleId }
+            ?.jsonObject
+            ?.let { rule ->
+                rule["enabled"]?.jsonPrimitive?.booleanOrNull != false &&
+                    rule["actions"]?.jsonArray?.any { (it as? JsonPrimitive)?.contentOrNull == "notify" } == true
+            }
+
+    private suspend fun setTypedOverrideRule(ruleId: String, roomId: RoomId, eventType: String, enabled: Boolean) {
+        notificationSettings.await().setCustomPushRule(
+            ruleId,
+            RuleKind.Override,
+            if (enabled) listOf(Action.Notify) else emptyList(),
+            listOf(
+                PushCondition.EventMatch("room_id", roomId.value),
+                PushCondition.EventMatch("type", eventType),
+            ),
+        )
     }
 
     override suspend fun isInviteForMeEnabled(): Result<Boolean> = withContext(dispatchers.io) {
