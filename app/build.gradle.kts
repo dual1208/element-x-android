@@ -26,6 +26,7 @@ import extension.setupDependencyInjection
 import extension.testCommonDependencies
 import org.sonarqube.gradle.SonarResolverTask
 import java.util.Locale
+import java.util.Properties
 
 plugins {
     id("io.element.android-compose-application")
@@ -38,14 +39,19 @@ plugins {
     // alias(libs.plugins.gms.google.services)
 }
 
+// Release identifiers belong to the app, so bumping them does not rebuild the shared Gradle plugins.
+val familyRelease = Properties().apply {
+    load(providers.fileContents(layout.projectDirectory.file("family-release.properties")).asText.get().reader())
+}
+
 android {
     namespace = "io.element.android.x"
 
     defaultConfig {
         applicationId = BuildTimeConfig.APPLICATION_ID
         targetSdk = Versions.TARGET_SDK
-        versionCode = Versions.VERSION_CODE + if (BuildTimeConfig.MANAGED_FAMILY_MODE) 2 else 0
-        versionName = Versions.VERSION_NAME
+        versionCode = if (BuildTimeConfig.MANAGED_FAMILY_MODE) familyRelease.getProperty("versionCode").toInt() else Versions.VERSION_CODE
+        versionName = if (BuildTimeConfig.MANAGED_FAMILY_MODE) familyRelease.getProperty("versionName") else Versions.VERSION_NAME
 
         // Keep abiFilter for the universalApk
         ndk {
