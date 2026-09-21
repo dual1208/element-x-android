@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.messages.impl.crypto.sendfailure.resolve.ResolveVerifiedUserSendFailureView
@@ -87,10 +88,16 @@ import io.element.android.features.messages.impl.timeline.components.toText
 import io.element.android.features.messages.impl.timeline.di.LocalTimelineItemPresenterFactories
 import io.element.android.features.messages.impl.timeline.di.aFakeTimelineItemPresenterFactories
 import io.element.android.features.messages.impl.timeline.focus.FocusRequestStateView
+import io.element.android.features.messages.impl.timeline.groups.isRedactedMessagesGroup
 import io.element.android.features.messages.impl.timeline.model.NewEventState
 import io.element.android.features.messages.impl.timeline.model.TimelineItem
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemEventContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemEventContentPreviewParam
+import io.element.android.features.messages.impl.timeline.model.event.TimelineItemLegacyCallInviteContent
+import io.element.android.features.messages.impl.timeline.model.event.TimelineItemRtcNotificationContent
+import io.element.android.features.messages.impl.timeline.model.event.TimelineItemStateContent
+import io.element.android.features.messages.impl.timeline.model.virtual.TimelineItemDaySeparatorModel
+import io.element.android.features.messages.impl.timeline.model.virtual.TimelineItemLastForwardIndicatorModel
 import io.element.android.features.messages.impl.timeline.protection.TimelineProtectionState
 import io.element.android.features.messages.impl.timeline.protection.aTimelineProtectionState
 import io.element.android.libraries.androidutils.system.copyToClipboard
@@ -111,6 +118,7 @@ import io.element.android.libraries.testtags.testTag
 import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.wysiwyg.link.Link
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -144,6 +152,10 @@ fun TimelineView(
     nestedScrollConnection: NestedScrollConnection = rememberNestedScrollInteropConnection(),
     floatingDateTopOffset: Dp = 0.dp,
 ) {
+    val displayedTimelineItems = remember(state.timelineItems) {
+        state.timelineItems.withoutManagedOrphanDaySeparators()
+    }
+
     fun clearFocusRequestState() {
         state.eventSink(TimelineEvent.ClearFocusRequestState)
     }
@@ -202,7 +214,7 @@ fun TimelineView(
                 contentPadding = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues() + PaddingValues(top = 64.dp, bottom = 8.dp),
             ) {
                 items(
-                    items = state.timelineItems,
+                    items = displayedTimelineItems,
                     contentType = { timelineItem -> timelineItem.contentType() },
                     key = { timelineItem -> timelineItem.identifier() },
                 ) { timelineItem ->
@@ -261,7 +273,7 @@ fun TimelineView(
 
             FloatingDateBadgeOverlay(
                 lazyListState = lazyListState,
-                timelineItems = state.timelineItems,
+                timelineItems = displayedTimelineItems,
                 isLive = state.isLive,
                 topOffset = floatingDateTopOffset,
             )
@@ -271,6 +283,34 @@ fun TimelineView(
     ResolveVerifiedUserSendFailureView(state = state.resolveVerifiedUserSendFailureState)
 
     MessageShieldDialog(state)
+}
+
+private fun ImmutableList<TimelineItem>.withoutManagedOrphanDaySeparators(): ImmutableList<TimelineItem> {
+    if (!ManagedFamilyConfig.ENABLED) return this
+
+    var hasVisibleContentSincePreviousDaySeparator = false
+    return map { item ->
+        if (item is TimelineItem.Virtual && item.model is TimelineItemDaySeparatorModel) {
+            val displayedItem = if (hasVisibleContentSincePreviousDaySeparator) {
+                item
+            } else {
+                item.copy(model = TimelineItemLastForwardIndicatorModel)
+            }
+            hasVisibleContentSincePreviousDaySeparator = false
+            displayedItem
+        } else {
+            hasVisibleContentSincePreviousDaySeparator = hasVisibleContentSincePreviousDaySeparator || item.isManagedVisibleContent()
+            item
+        }
+    }.toImmutableList()
+}
+
+private fun TimelineItem.isManagedVisibleContent(): Boolean = when (this) {
+    is TimelineItem.Event -> content !is TimelineItemStateContent ||
+        content is TimelineItemLegacyCallInviteContent ||
+        content is TimelineItemRtcNotificationContent
+    is TimelineItem.GroupedEvents -> isRedactedMessagesGroup()
+    is TimelineItem.Virtual -> false
 }
 
 @Composable
