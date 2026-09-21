@@ -36,6 +36,8 @@ import io.element.android.libraries.matrix.ui.model.getBestName
 fun MatrixUserHeader(
     matrixUser: MatrixUser,
     modifier: Modifier = Modifier,
+    name: String = matrixUser.getBestName(),
+    userIdText: String = matrixUser.userId.value,
 ) {
     Row(
         modifier = modifier
@@ -58,7 +60,7 @@ fun MatrixUserHeader(
         ) {
             // Name
             DisplayNameWithStatus(
-                name = matrixUser.getBestName(),
+                name = name,
                 status = matrixUser.displayedStatus,
                 nameColor = ElementTheme.colors.textPrimary,
                 style = ElementTheme.typography.fontHeadingMdRegular,
@@ -66,7 +68,7 @@ fun MatrixUserHeader(
             // Id
             if (matrixUser.displayName.isNullOrEmpty().not()) {
                 Text(
-                    text = matrixUser.userId.value,
+                    text = userIdText,
                     style = ElementTheme.typography.fontBodyMdRegular,
                     color = ElementTheme.colors.textSecondary,
                     maxLines = 1,

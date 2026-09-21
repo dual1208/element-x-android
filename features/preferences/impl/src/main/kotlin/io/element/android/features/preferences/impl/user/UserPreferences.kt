@@ -11,11 +11,13 @@ package io.element.android.features.preferences.impl.user
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.matrix.api.user.MatrixUser
 import io.element.android.libraries.matrix.ui.components.MatrixUserHeader
 import io.element.android.libraries.matrix.ui.components.MatrixUserPreviewParam
+import io.element.android.libraries.matrix.ui.model.getBestName
 
 @Composable
 fun UserPreferences(
@@ -25,6 +27,16 @@ fun UserPreferences(
     MatrixUserHeader(
         modifier = modifier,
         matrixUser = matrixUser,
+        name = if (ManagedFamilyConfig.ENABLED) {
+            matrixUser.displayName ?: matrixUser.userId.extractedDisplayName
+        } else {
+            matrixUser.getBestName()
+        },
+        userIdText = if (ManagedFamilyConfig.ENABLED) {
+            matrixUser.userId.extractedDisplayName
+        } else {
+            matrixUser.userId.value
+        },
     )
 }
 
