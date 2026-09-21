@@ -11,7 +11,7 @@ package config
 object BuildTimeConfig {
     const val MANAGED_FAMILY_MODE: Boolean = true
     const val APPLICATION_ID = "io.element.android.x"
-    const val APPLICATION_NAME = "Element X"
+    const val APPLICATION_NAME = "家庭聊天"
     val METADATA_HOST_REVERSED: String? = null
     val OAUTH_CLIENT_URL_PATH: String? = "apps/android"
     val URL_WEBSITE: String? = null

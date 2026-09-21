@@ -7,8 +7,8 @@
   -->
 
 <resources>
-    <string name="managed_family_conversation">家人聊天</string>
-    <string name="managed_family_setup_needs_help">完成首次设置</string>
-    <string name="managed_family_setup_help_message">请让帮你安装的家人陪你完成验证和聊天恢复。</string>
-    <string name="managed_family_open_settings">打开设置</string>
+    <string name="managed_family_conversation">家庭聊天</string>
+    <string name="managed_family_setup_needs_help">正在进入家庭聊天</string>
+    <string name="managed_family_setup_help_message">正在同步你的家庭群。若长时间没有进入，请联系帮你安装的人。</string>
+    <string name="managed_family_open_settings">设置</string>
 </resources>

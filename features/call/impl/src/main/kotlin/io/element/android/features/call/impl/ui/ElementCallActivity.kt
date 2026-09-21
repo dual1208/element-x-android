@@ -10,6 +10,7 @@ package io.element.android.features.call.impl.ui
 
 import android.Manifest
 import android.app.PictureInPictureParams
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
@@ -39,6 +40,7 @@ import androidx.lifecycle.Lifecycle
 import dev.zacsweers.metro.Inject
 import io.element.android.compound.colors.SemanticColorsLightDark
 import io.element.android.compound.theme.ForcedDarkElementTheme
+import io.element.android.appconfig.withManagedFamilyLocale
 import io.element.android.features.call.api.CallData
 import io.element.android.features.call.impl.DefaultElementCallEntryPoint
 import io.element.android.features.call.impl.di.CallBindings
@@ -88,6 +90,10 @@ class ElementCallActivity :
     private var eventSink: ((CallScreenEvent) -> Unit)? = null
 
     private var currentPipOrientation: Int? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(newBase.withManagedFamilyLocale())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

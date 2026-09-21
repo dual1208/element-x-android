@@ -38,8 +38,6 @@ import io.element.android.features.login.impl.R
 import io.element.android.features.login.impl.login.LoginModeEvent
 import io.element.android.features.login.impl.login.LoginModeView
 import io.element.android.libraries.architecture.AsyncData
-import io.element.android.libraries.designsystem.atomic.atoms.ElementLogoAtom
-import io.element.android.libraries.designsystem.atomic.atoms.ElementLogoAtomSize
 import io.element.android.libraries.designsystem.atomic.molecules.ButtonColumnMolecule
 import io.element.android.libraries.designsystem.atomic.pages.FlowStepPage
 import io.element.android.libraries.designsystem.atomic.pages.OnBoardingPage
@@ -210,10 +208,21 @@ private fun OnBoardingContent(state: OnBoardingState) {
                 verticalBias = -0.4f
             )
         ) {
-            ElementLogoAtom(
-                size = ElementLogoAtomSize.Large,
-                modifier = Modifier.padding(top = ElementLogoAtomSize.Large.shadowRadius / 2)
-            )
+            if (ManagedFamilyConfig.ENABLED) {
+                BigIcon(
+                    style = BigIcon.Style.Default(
+                        vectorIcon = CompoundIcons.Chat(),
+                        usePrimaryTint = true,
+                    )
+                )
+            } else {
+                io.element.android.libraries.designsystem.atomic.atoms.ElementLogoAtom(
+                    size = io.element.android.libraries.designsystem.atomic.atoms.ElementLogoAtomSize.Large,
+                    modifier = Modifier.padding(
+                        top = io.element.android.libraries.designsystem.atomic.atoms.ElementLogoAtomSize.Large.shadowRadius / 2
+                    )
+                )
+            }
         }
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -228,14 +237,20 @@ private fun OnBoardingContent(state: OnBoardingState) {
                 horizontalAlignment = CenterHorizontally,
             ) {
                 Text(
-                    text = stringResource(id = R.string.screen_onboarding_welcome_title),
+                    text = stringResource(
+                        id = if (ManagedFamilyConfig.ENABLED) R.string.managed_family_welcome_title else R.string.screen_onboarding_welcome_title
+                    ),
                     color = ElementTheme.colors.textPrimary,
                     style = ElementTheme.typography.fontHeadingLgBold,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = stringResource(id = R.string.screen_onboarding_welcome_message, state.productionApplicationName),
+                    text = if (ManagedFamilyConfig.ENABLED) {
+                        stringResource(id = R.string.managed_family_welcome_message)
+                    } else {
+                        stringResource(id = R.string.screen_onboarding_welcome_message, state.productionApplicationName)
+                    },
                     color = ElementTheme.colors.textPrimary,
                     style = ElementTheme.typography.fontBodyLgRegular,
                     textAlign = TextAlign.Center,

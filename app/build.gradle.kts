@@ -76,7 +76,7 @@ android {
         }
 
         androidResources {
-            localeFilters += locales
+            localeFilters += if (BuildTimeConfig.MANAGED_FAMILY_MODE) listOf("zh") else locales
         }
     }
 
@@ -105,7 +105,7 @@ android {
     buildTypes {
         val oAuthRedirectSchemeBase = BuildTimeConfig.METADATA_HOST_REVERSED ?: "io.element.android"
         getByName("debug") {
-            resValue("string", "app_name", "$baseAppName dbg")
+            resValue("string", "app_name", if (BuildTimeConfig.MANAGED_FAMILY_MODE) baseAppName else "$baseAppName dbg")
             resValue(
                 "string",
                 "login_redirect_scheme",
@@ -140,7 +140,7 @@ android {
             initWith(release)
             applicationIdSuffix = ".nightly"
             versionNameSuffix = "-nightly"
-            resValue("string", "app_name", "$baseAppName nightly")
+            resValue("string", "app_name", if (BuildTimeConfig.MANAGED_FAMILY_MODE) baseAppName else "$baseAppName nightly")
             resValue(
                 "string",
                 "login_redirect_scheme",

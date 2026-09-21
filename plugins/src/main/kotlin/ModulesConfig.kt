@@ -13,7 +13,8 @@ import config.PushProvidersConfig
 object ModulesConfig {
     val pushProvidersConfig = PushProvidersConfig(
         includeFirebase = BuildTimeConfig.PUSH_CONFIG_INCLUDE_FIREBASE && !BuildTimeConfig.MANAGED_FAMILY_MODE,
-        includeUnifiedPush = BuildTimeConfig.PUSH_CONFIG_INCLUDE_UNIFIED_PUSH,
+        includeUnifiedPush = BuildTimeConfig.PUSH_CONFIG_INCLUDE_UNIFIED_PUSH && !BuildTimeConfig.MANAGED_FAMILY_MODE,
+        allowNoProviders = BuildTimeConfig.MANAGED_FAMILY_MODE,
     )
 
     val analyticsConfig: AnalyticsConfig = if (BuildTimeConfig.MANAGED_FAMILY_MODE) {

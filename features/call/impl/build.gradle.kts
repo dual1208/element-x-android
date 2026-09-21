@@ -2,6 +2,7 @@ import extension.buildConfigFieldStr
 import extension.readLocalProperty
 import extension.setupDependencyInjection
 import extension.testCommonDependencies
+import config.BuildTimeConfig
 
 /*
  * Copyright (c) 2025 Element Creations Ltd.
@@ -31,31 +32,31 @@ android {
     defaultConfig {
         buildConfigFieldStr(
             name = "SENTRY_DSN",
-            value = System.getenv("ELEMENT_CALL_SENTRY_DSN")
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) "" else System.getenv("ELEMENT_CALL_SENTRY_DSN")
                 ?: readLocalProperty("features.call.sentry.dsn")
                 ?: ""
         )
         buildConfigFieldStr(
             name = "POSTHOG_USER_ID",
-            value = System.getenv("ELEMENT_CALL_POSTHOG_USER_ID")
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) "" else System.getenv("ELEMENT_CALL_POSTHOG_USER_ID")
                 ?: readLocalProperty("features.call.posthog.userid")
                 ?: ""
         )
         buildConfigFieldStr(
             name = "POSTHOG_API_HOST",
-            value = System.getenv("ELEMENT_CALL_POSTHOG_API_HOST")
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) "" else System.getenv("ELEMENT_CALL_POSTHOG_API_HOST")
                 ?: readLocalProperty("features.call.posthog.api.host")
                 ?: ""
         )
         buildConfigFieldStr(
             name = "POSTHOG_API_KEY",
-            value = System.getenv("ELEMENT_CALL_POSTHOG_API_KEY")
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) "" else System.getenv("ELEMENT_CALL_POSTHOG_API_KEY")
                 ?: readLocalProperty("features.call.posthog.api.key")
                 ?: ""
         )
         buildConfigFieldStr(
             name = "RAGESHAKE_URL",
-            value = System.getenv("ELEMENT_CALL_RAGESHAKE_URL")
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) "" else System.getenv("ELEMENT_CALL_RAGESHAKE_URL")
                 ?: readLocalProperty("features.call.regeshake.url")
                 ?: ""
         )

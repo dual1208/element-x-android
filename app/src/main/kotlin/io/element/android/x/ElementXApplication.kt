@@ -9,6 +9,7 @@
 package io.element.android.x
 
 import android.app.Application
+import android.content.Context
 import androidx.compose.material3.ComposeMaterial3Flags.isAnchoredDraggableComponentsStrictOffsetCheckEnabled
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.startup.AppInitializer
@@ -19,6 +20,8 @@ import io.element.android.libraries.architecture.bindings
 import io.element.android.libraries.di.DependencyInjectionGraphOwner
 import io.element.android.libraries.matrix.api.SdkMetadata
 import io.element.android.libraries.workmanager.api.di.MetroWorkerFactory
+import io.element.android.appconfig.ManagedFamilyConfig
+import io.element.android.appconfig.withManagedFamilyLocale
 import io.element.android.x.di.AppGraph
 import io.element.android.x.di.ApplicationBindings
 import io.element.android.x.info.logApplicationInfo
@@ -35,11 +38,17 @@ class ElementXApplication : Application(), DependencyInjectionGraphOwner, Config
 
     @Inject lateinit var sdkMetadata: SdkMetadata
 
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base.withManagedFamilyLocale())
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate() {
         super.onCreate()
         AppInitializer.getInstance(this).apply {
-            initializeComponent(CrashInitializer::class.java)
+            if (!ManagedFamilyConfig.ENABLED) {
+                initializeComponent(CrashInitializer::class.java)
+            }
             initializeComponent(PlatformInitializer::class.java)
             initializeComponent(CacheCleanerInitializer::class.java)
         }

@@ -8,6 +8,7 @@
 
 package io.element.android.features.call.impl.ui
 
+import android.content.Context
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
@@ -19,6 +20,7 @@ import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
 import dev.zacsweers.metro.Inject
 import io.element.android.compound.colors.SemanticColorsLightDark
+import io.element.android.appconfig.withManagedFamilyLocale
 import io.element.android.features.call.api.CallData
 import io.element.android.features.call.api.ElementCallEntryPoint
 import io.element.android.features.call.impl.di.CallBindings
@@ -69,6 +71,10 @@ class IncomingCallActivity : AppCompatActivity() {
 
     @AppCoroutineScope
     @Inject lateinit var appCoroutineScope: CoroutineScope
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(newBase.withManagedFamilyLocale())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

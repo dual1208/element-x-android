@@ -22,7 +22,9 @@ android {
     defaultConfig {
         buildConfigFieldStr(
             name = "URL_POLICY",
-            value = if (isEnterpriseBuild) {
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) {
+                ""
+            } else if (isEnterpriseBuild) {
                 BuildTimeConfig.URL_POLICY ?: ""
             } else {
                 "https://element.io/cookie-policy"
@@ -30,7 +32,9 @@ android {
         )
         buildConfigFieldStr(
             name = "BUG_REPORT_URL",
-            value = if (isEnterpriseBuild) {
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) {
+                ""
+            } else if (isEnterpriseBuild) {
                 BuildTimeConfig.BUG_REPORT_URL ?: ""
             } else {
                 "https://rageshakes.element.io/api/submit"
@@ -38,7 +42,9 @@ android {
         )
         buildConfigFieldStr(
             name = "BUG_REPORT_APP_NAME",
-            value = if (isEnterpriseBuild) {
+            value = if (BuildTimeConfig.MANAGED_FAMILY_MODE) {
+                ""
+            } else if (isEnterpriseBuild) {
                 BuildTimeConfig.BUG_REPORT_APP_NAME ?: ""
             } else {
                 "element-x-android"

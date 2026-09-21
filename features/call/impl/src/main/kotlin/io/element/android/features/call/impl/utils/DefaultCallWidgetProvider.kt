@@ -10,6 +10,7 @@ package io.element.android.features.call.impl.utils
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.matrix.api.MatrixClientProvider
 import io.element.android.libraries.matrix.api.core.RoomId
@@ -41,11 +42,14 @@ class DefaultCallWidgetProvider(
             ?: matrixClient.getJoinedRoom(roomId)
             ?: error("Room not found")
 
-        val customBaseUrl = appPreferencesStore.getCustomElementCallBaseUrlFlow().firstOrNull()
+        val customBaseUrl = if (ManagedFamilyConfig.ENABLED) null else appPreferencesStore.getCustomElementCallBaseUrlFlow().firstOrNull()
         val baseUrl = customBaseUrl ?: EMBEDDED_CALL_WIDGET_BASE_URL
 
         val roomInfo = room.info()
         val isEncrypted = roomInfo.isEncrypted ?: room.getUpdatedIsEncrypted().getOrThrow()
+        check(!ManagedFamilyConfig.ENABLED || !isEncrypted) {
+            "Managed family calls are only available in the assigned unencrypted room"
+        }
         val widgetSettings = callWidgetSettingsProvider.provide(
             baseUrl = baseUrl,
             encrypted = isEncrypted,
@@ -56,7 +60,7 @@ class DefaultCallWidgetProvider(
         val callUrl = room.generateWidgetWebViewUrl(
             widgetSettings = widgetSettings,
             clientId = clientId,
-            languageTag = languageTag,
+            languageTag = if (ManagedFamilyConfig.ENABLED) ManagedFamilyConfig.LANGUAGE_TAG else languageTag,
             theme = theme,
         ).getOrThrow()
 

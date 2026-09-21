@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
+import io.element.android.appconfig.ManagedFamilyConfig
 
 interface LanguageTagProvider {
     @Composable
@@ -22,6 +23,7 @@ interface LanguageTagProvider {
 class DefaultLanguageTagProvider : LanguageTagProvider {
     @Composable
     override fun provideLanguageTag(): String? {
+        if (ManagedFamilyConfig.ENABLED) return ManagedFamilyConfig.LANGUAGE_TAG
         return LocalConfiguration.current.locales.get(0)?.toLanguageTag()
     }
 }
