@@ -233,11 +233,13 @@ private fun ColumnScope.ManageAppSection(
         leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Notifications())),
         onClick = onOpenNotificationSettings,
     )
-    ListItem(
-        content = { Text(stringResource(id = CommonStrings.common_screen_lock)) },
-        leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Lock())),
-        onClick = onOpenLockScreenSettings,
-    )
+    if (state.showLockScreenSettings) {
+        ListItem(
+            content = { Text(stringResource(id = CommonStrings.common_screen_lock)) },
+            leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Lock())),
+            onClick = onOpenLockScreenSettings,
+        )
+    }
     if (state.showSecureBackup) {
         ListItem(
             content = { Text(stringResource(id = CommonStrings.common_encryption)) },

@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.messages.impl.R
 import io.element.android.libraries.androidutils.ui.hideKeyboard
@@ -133,14 +134,16 @@ private fun AttachmentSourcePickerMenu(
                 content = { Text(stringResource(R.string.screen_room_attachment_source_location)) },
             )
         }
-        ListItem(
-            modifier = Modifier.clickable {
-                state.eventSink(MessageComposerEvent.PickAttachmentSource.Poll)
-                onCreatePollClick()
-            },
-            leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Polls())),
-            content = { Text(stringResource(R.string.screen_room_attachment_source_poll)) },
-        )
+        if (!ManagedFamilyConfig.ENABLED) {
+            ListItem(
+                modifier = Modifier.clickable {
+                    state.eventSink(MessageComposerEvent.PickAttachmentSource.Poll)
+                    onCreatePollClick()
+                },
+                leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Polls())),
+                content = { Text(stringResource(R.string.screen_room_attachment_source_poll)) },
+            )
+        }
         if (enableTextFormatting) {
             ListItem(
                 modifier = Modifier.clickable { state.eventSink(MessageComposerEvent.ToggleTextFormatting(enabled = true)) },

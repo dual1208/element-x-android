@@ -247,13 +247,17 @@ fun RoomDetailsView(
                 MediaGalleryItem(
                     onClick = openMediaGallery
                 )
-                PinnedMessagesItem(
-                    pinnedMessagesCount = state.pinnedMessagesCount,
-                    onPinnedMessagesClick = onPinnedMessagesClick
-                )
-                PollsItem(
-                    openPollHistory = openPollHistory
-                )
+                if (!ManagedFamilyConfig.ENABLED || (state.pinnedMessagesCount ?: 0) > 0) {
+                    PinnedMessagesItem(
+                        pinnedMessagesCount = state.pinnedMessagesCount,
+                        onPinnedMessagesClick = onPinnedMessagesClick
+                    )
+                }
+                if (!ManagedFamilyConfig.ENABLED) {
+                    PollsItem(
+                        openPollHistory = openPollHistory
+                    )
+                }
             }
             when (state.roomType) {
                 is RoomDetailsType.Room -> {
@@ -302,12 +306,14 @@ fun RoomDetailsView(
                         openRoomNotificationSettings = openRoomNotificationSettings
                     )
                 }
-                FavoriteItem(
-                    isFavorite = state.isFavorite,
-                    onFavoriteChanges = {
-                        state.eventSink(RoomDetailsEvent.SetFavorite(it))
-                    }
-                )
+                if (!ManagedFamilyConfig.ENABLED) {
+                    FavoriteItem(
+                        isFavorite = state.isFavorite,
+                        onFavoriteChanges = {
+                            state.eventSink(RoomDetailsEvent.SetFavorite(it))
+                        }
+                    )
+                }
                 if (state.canShowSecurityAndPrivacy && state.roomType is RoomDetailsType.Room) {
                     SecurityAndPrivacyItem(
                         onClick = onSecurityAndPrivacyClick
