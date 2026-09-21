@@ -54,7 +54,7 @@ fun LoginModeView(
                         }
                         is ChangeServerError.Error -> {
                             ErrorDialog(
-                                content = error.messageStr ?: stringResource(CommonStrings.error_unknown),
+                                content = stringResource(R.string.family_login_connection_failed),
                                 onSubmit = onClearError,
                             )
                         }

@@ -61,7 +61,7 @@ class CallForegroundService : Service() {
             "call_foreground_service_channel",
             NotificationManagerCompat.IMPORTANCE_LOW,
         ).setName(
-            getString(R.string.call_foreground_service_channel_title_android).ifEmpty { "Ongoing call" }
+            getString(R.string.call_foreground_service_channel_title_android)
         ).build()
         notificationManagerCompat.createNotificationChannel(foregroundServiceChannel)
 

@@ -81,10 +81,7 @@ internal fun CallScreenView(
     }
     if (state.webViewError != null) {
         ErrorDialog(
-            content = buildString {
-                append(stringResource(CommonStrings.error_unknown))
-                state.webViewError.takeIf { it.isNotEmpty() }?.let { append("\n\n").append(it) }
-            },
+            content = stringResource(R.string.family_call_connection_failed),
             onSubmit = { state.eventSink(CallScreenEvent.Hangup) },
         )
     } else {
@@ -152,7 +149,7 @@ internal fun CallScreenView(
             is AsyncData.Failure -> {
                 Timber.e(state.urlState.error, "WebView failed to load URL: ${state.urlState.error.message}")
                 ErrorDialog(
-                    content = state.urlState.error.message.orEmpty(),
+                    content = stringResource(R.string.family_call_connection_failed),
                     onSubmit = { state.eventSink(CallScreenEvent.Hangup) },
                 )
             }

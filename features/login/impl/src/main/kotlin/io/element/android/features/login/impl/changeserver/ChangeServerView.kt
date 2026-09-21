@@ -61,7 +61,7 @@ fun ChangeServerView(
                 is ChangeServerError.Error -> {
                     ErrorDialog(
                         modifier = modifier,
-                        content = error.messageStr ?: stringResource(CommonStrings.error_unknown),
+                        content = stringResource(R.string.family_login_connection_failed),
                         onSubmit = {
                             eventSink.invoke(ChangeServerEvent.ClearError)
                         }

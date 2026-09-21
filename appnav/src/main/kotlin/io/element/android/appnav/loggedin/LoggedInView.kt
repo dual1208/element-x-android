@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.lifecycle.Lifecycle
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.appnav.R
 import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.designsystem.components.dialogs.ErrorDialog
@@ -56,11 +57,18 @@ fun LoggedInView(
         is AsyncData.Success -> Unit
         is AsyncData.Failure -> {
             state.pusherRegistrationState.errorOrNull()
-                ?.takeIf { !state.ignoreRegistrationError }
+                ?.takeIf {
+                    !state.ignoreRegistrationError && !(ManagedFamilyConfig.ENABLED &&
+                        (it is PusherRegistrationFailure.NoProvidersAvailable || it is PusherRegistrationFailure.NoDistributorsAvailable))
+                }
                 ?.getReason()
                 ?.let { reason ->
                     ErrorDialogWithDoNotShowAgain(
-                        content = stringResource(id = CommonStrings.common_error_registering_pusher_android, reason),
+                        content = if (ManagedFamilyConfig.ENABLED) {
+                            stringResource(R.string.family_background_alerts_failed)
+                        } else {
+                            stringResource(id = CommonStrings.common_error_registering_pusher_android, reason)
+                        },
                         cancelText = stringResource(id = CommonStrings.common_settings),
                         onDismiss = {
                             state.eventSink(LoggedInEvent.CloseErrorDialog(it))

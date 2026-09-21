@@ -37,7 +37,7 @@ stage:
     set -euo pipefail
     export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
     build_tools=/opt/homebrew/share/android-commandlinetools/build-tools/36.0.0
-    stage_dir=build/codex-artifacts/family3
+    stage_dir=build/codex-artifacts/family4
     test -f "{{apk}}"
     "$build_tools/apksigner" verify --verbose "{{apk}}"
     "$build_tools/zipalign" -c -P 16 -v 4 "{{apk}}" >/dev/null

@@ -97,8 +97,8 @@ class PictureInPicturePresenter(
                 pipView?.enterPipMode()
                     ?.also { Timber.tag(loggerTag.value).d("Switch to PiP mode result: $it") }
             } else {
-                Timber.tag(loggerTag.value).w("Cannot enter PiP mode, hangup the call")
-                pipView?.hangUp()
+                // A transient widget/PiP limitation must not end an active call.
+                Timber.tag(loggerTag.value).d("PiP is not ready; keep the call active")
             }
         }
     }

@@ -124,6 +124,11 @@ private fun ManagedFamilyNotificationSettingsContent(
     state: NotificationSettingsState,
 ) {
     val context = LocalContext.current
+    if (state.currentPushDistributor.isFailure()) {
+        ListItem(
+            content = { Text(stringResource(R.string.family_background_alerts_unavailable)) },
+        )
+    }
     if (!state.appSettings.systemNotificationsEnabled) {
         ListItem(
             leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.NotificationsOffSolid())),

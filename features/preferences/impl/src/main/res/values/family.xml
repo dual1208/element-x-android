@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="family_background_alerts_unavailable">后台提醒暂不可用，请保持应用打开。</string>
+</resources>
