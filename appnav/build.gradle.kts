@@ -49,6 +49,7 @@ dependencies {
     implementation(projects.features.login.api)
 
     implementation(libs.coil)
+    implementation(libs.serialization.json)
 
     implementation(projects.features.announcement.api)
     implementation(projects.features.ftue.api)

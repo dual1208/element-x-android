@@ -23,6 +23,7 @@ import com.bumble.appyx.navmodel.backstack.operation.push
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedInject
 import im.vector.app.features.analytics.plan.Interaction
+import io.element.android.appconfig.ManagedFamilyConfig
 import io.element.android.annotations.ContributesNode
 import io.element.android.appconfig.LearnMoreConfig
 import io.element.android.features.call.api.CallData
@@ -221,7 +222,7 @@ class RoomDetailsFlowNode(
                     }
 
                     override fun navigateToSecurityAndPrivacy() {
-                        backstack.push(NavTarget.SecurityAndPrivacy)
+                        if (!ManagedFamilyConfig.ENABLED) backstack.push(NavTarget.SecurityAndPrivacy)
                     }
 
                     override fun navigateToRoomMemberDetails(userId: UserId) {

@@ -184,12 +184,10 @@ class LoggedInFlowNode(
         snackbarDispatcher = snackbarDispatcher,
         roomMembershipObserver = matrixClient.roomMembershipObserver,
     )
-    private var familyRoomBootstrapJob: Job? = null
-    private val managedFamilyCryptoReadiness = ManagedFamilyCryptoReadiness(
-        ftueState = ftueService.state,
-        sessionVerifiedStatus = matrixClient.sessionVerificationService.sessionVerifiedStatus,
-        recoveryState = matrixClient.encryptionService.recoveryStateStateFlow,
-    )
+    private var assignedRoomBootstrapJob: Job? = null
+    private var assignedRoomRoutingComplete = false
+    @Volatile
+    private var assignedRoomId: RoomId? = null
 
     private val verificationListener = object : SessionVerificationServiceListener {
         override fun onIncomingSessionRequest(verificationRequest: VerificationRequest.Incoming) {
@@ -232,10 +230,10 @@ class LoggedInFlowNode(
         }
         lifecycle.subscribe(
             onCreate = {
-                analyticsRoomListStateWatcher.start()
+                if (!ManagedFamilyConfig.ENABLED) analyticsRoomListStateWatcher.start()
                 appNavigationStateService.onNavigateToSession(id, matrixClient.sessionId)
                 loggedInFlowProcessor.observeEvents(sessionCoroutineScope)
-                matrixClient.sessionVerificationService.setListener(verificationListener)
+                if (!ManagedFamilyConfig.ENABLED) matrixClient.sessionVerificationService.setListener(verificationListener)
                 mediaPreviewConfigMigration()
                 sessionCoroutineScope.launch {
                     // Wait for the network to be connected before pre-fetching the max file upload size
@@ -243,7 +241,9 @@ class LoggedInFlowNode(
                     matrixClient.getMaxFileUploadSize()
                 }
 
-                analyticsService.startLongRunningTransaction(AnalyticsLongRunningTransaction.FirstRoomsDisplayed)
+                if (!ManagedFamilyConfig.ENABLED) {
+                    analyticsService.startLongRunningTransaction(AnalyticsLongRunningTransaction.FirstRoomsDisplayed)
+                }
 
                 ftueService.state
                     .onEach { ftueState ->
@@ -270,8 +270,10 @@ class LoggedInFlowNode(
             onDestroy = {
                 appNavigationStateService.onLeavingSession(id)
                 loggedInFlowProcessor.stopObserving()
-                matrixClient.sessionVerificationService.setListener(null)
-                analyticsRoomListStateWatcher.stop()
+                if (!ManagedFamilyConfig.ENABLED) {
+                    matrixClient.sessionVerificationService.setListener(null)
+                    analyticsRoomListStateWatcher.stop()
+                }
             }
         )
         setupSendingQueue()
@@ -282,21 +284,23 @@ class LoggedInFlowNode(
     }
 
     private fun startFamilyRoomBootstrap() {
-        if (!ManagedFamilyConfig.ENABLED || familyRoomBootstrapJob?.isActive == true) return
-        if (!managedFamilyCryptoReadiness.isReady()) return
+        if (!ManagedFamilyConfig.ENABLED || assignedRoomRoutingComplete || assignedRoomBootstrapJob?.isActive == true) return
         if (matrixClient.sessionId.domainName != ManagedFamilyConfig.HOMESERVER_NAME) {
-            Timber.w("Keeping incompatible session on managed repair screen")
+            Timber.w("Keeping incompatible session on managed family waiting screen")
             return
         }
         val bootstrapJob = lifecycleScope.launch {
-            val roomId = FamilyRoomBootstrapper(matrixClient, acceptInvite, networkMonitor)
-                .awaitJoined(ManagedFamilyConfig.roomId)
+            val roomId = AssignedRoomBootstrapper(matrixClient, acceptInvite, networkMonitor)
+                .joinedRooms()
+                .first()
+            assignedRoomId = roomId
             attachRoom(roomId.toRoomIdOrAlias(), clearBackstack = true)
+            assignedRoomRoutingComplete = true
         }
-        familyRoomBootstrapJob = bootstrapJob
+        assignedRoomBootstrapJob = bootstrapJob
         bootstrapJob.invokeOnCompletion {
-            if (familyRoomBootstrapJob === bootstrapJob) {
-                familyRoomBootstrapJob = null
+            if (assignedRoomBootstrapJob === bootstrapJob) {
+                assignedRoomBootstrapJob = null
             }
         }
     }
@@ -359,7 +363,7 @@ class LoggedInFlowNode(
     }
 
     override fun resolve(navTarget: NavTarget, buildContext: BuildContext): Node {
-        if (shouldRejectManagedFamilyTarget(navTarget, managedFamilyCryptoReadiness.isReady())) {
+        if (shouldRejectManagedFamilyTarget(navTarget, assignedRoomId)) {
             lifecycleScope.launch {
                 backstack.safeRoot(NavTarget.Home)
                 startFamilyRoomBootstrap()
@@ -379,7 +383,7 @@ class LoggedInFlowNode(
             NavTarget.Home -> {
                 val callback = object : HomeEntryPoint.Callback {
                     override fun navigateToRoom(roomId: RoomId, eventId: EventId?, joinedRoom: JoinedRoom?) {
-                        if (!ManagedFamilyConfig.isAllowedRoom(roomId)) return
+                        if (!isAllowedManagedRoom(roomId)) return
                         lifecycleScope.launch {
                             attachRoom(
                                 roomIdOrAlias = roomId.toRoomIdOrAlias(),
@@ -402,15 +406,15 @@ class LoggedInFlowNode(
                     }
 
                     override fun navigateToSetUpRecovery() {
-                        backstack.push(NavTarget.SecureBackup(initialElement = SecureBackupEntryPoint.InitialTarget.Root))
+                        if (!ManagedFamilyConfig.ENABLED) backstack.push(NavTarget.SecureBackup(initialElement = SecureBackupEntryPoint.InitialTarget.Root))
                     }
 
                     override fun navigateToEnterRecoveryKey() {
-                        backstack.push(NavTarget.SecureBackup(initialElement = SecureBackupEntryPoint.InitialTarget.EnterRecoveryKey))
+                        if (!ManagedFamilyConfig.ENABLED) backstack.push(NavTarget.SecureBackup(initialElement = SecureBackupEntryPoint.InitialTarget.EnterRecoveryKey))
                     }
 
                     override fun navigateToRoomSettings(roomId: RoomId) {
-                        if (!ManagedFamilyConfig.isAllowedRoom(roomId)) return
+                        if (!isAllowedManagedRoom(roomId)) return
                         lifecycleScope.launch {
                             attachRoom(
                                 roomIdOrAlias = roomId.toRoomIdOrAlias(),
@@ -421,7 +425,7 @@ class LoggedInFlowNode(
                     }
 
                     override fun navigateToBugReport() {
-                        callback.navigateToBugReport()
+                        if (!ManagedFamilyConfig.ENABLED) callback.navigateToBugReport()
                     }
                 }
                 homeEntryPoint.createNode(
@@ -437,7 +441,7 @@ class LoggedInFlowNode(
                     }
 
                     override fun navigateToRoom(roomId: RoomId, serverNames: List<String>, clearBackStack: Boolean) {
-                        if (!ManagedFamilyConfig.isAllowedRoom(roomId)) return
+                        if (!isAllowedManagedRoom(roomId)) return
                         lifecycleScope.launch {
                             attachRoom(roomIdOrAlias = roomId.toRoomIdOrAlias(), serverNames = serverNames, clearBackstack = clearBackStack)
                         }
@@ -450,7 +454,7 @@ class LoggedInFlowNode(
                                 Timber.e("User link clicked: ${data.userId}.")
                             }
                             is PermalinkData.RoomLink -> {
-                                if (!ManagedFamilyConfig.isAllowedRoom(data.roomIdOrAlias)) return
+                                if (!isAllowedManagedRoom(data.roomIdOrAlias)) return
                                 if (pushToBackstack) {
                                     lifecycleScope.launch {
                                         attachRoom(
@@ -499,7 +503,7 @@ class LoggedInFlowNode(
             is NavTarget.UserProfile -> {
                 val callback = object : UserProfileEntryPoint.Callback {
                     override fun navigateToRoom(roomId: RoomId) {
-                        if (!ManagedFamilyConfig.isAllowedRoom(roomId)) return
+                        if (!isAllowedManagedRoom(roomId)) return
                         lifecycleScope.launch {
                             attachRoom(roomIdOrAlias = roomId.toRoomIdOrAlias(), clearBackstack = false)
                         }
@@ -519,19 +523,19 @@ class LoggedInFlowNode(
                     }
 
                     override fun navigateToLinkNewDevice() {
-                        backstack.push(NavTarget.LinkNewDevice)
+                        if (!ManagedFamilyConfig.ENABLED) backstack.push(NavTarget.LinkNewDevice)
                     }
 
                     override fun navigateToBugReport() {
-                        callback.navigateToBugReport()
+                        if (!ManagedFamilyConfig.ENABLED) callback.navigateToBugReport()
                     }
 
                     override fun navigateToSecureBackup() {
-                        backstack.push(NavTarget.SecureBackup())
+                        if (!ManagedFamilyConfig.ENABLED) backstack.push(NavTarget.SecureBackup())
                     }
 
                     override fun navigateToRoomNotificationSettings(roomId: RoomId) {
-                        if (!ManagedFamilyConfig.isAllowedRoom(roomId)) return
+                        if (!isAllowedManagedRoom(roomId)) return
                         lifecycleScope.launch {
                             attachRoom(
                                 roomIdOrAlias = roomId.toRoomIdOrAlias(),
@@ -541,7 +545,7 @@ class LoggedInFlowNode(
                     }
 
                     override fun navigateToEvent(roomId: RoomId, eventId: EventId) {
-                        if (!ManagedFamilyConfig.isAllowedRoom(roomId)) return
+                        if (!isAllowedManagedRoom(roomId)) return
                         lifecycleScope.launch {
                             attachRoom(
                                 roomIdOrAlias = roomId.toRoomIdOrAlias(),
@@ -562,7 +566,7 @@ class LoggedInFlowNode(
             NavTarget.CreateRoom -> {
                 val callback = object : StartChatEntryPoint.Callback {
                     override fun onRoomCreated(roomIdOrAlias: RoomIdOrAlias, serverNames: List<String>) {
-                        if (ManagedFamilyConfig.isAllowedRoom(roomIdOrAlias)) {
+                        if (isAllowedManagedRoom(roomIdOrAlias)) {
                             backstack.replace(NavTarget.Room(roomIdOrAlias = roomIdOrAlias, serverNames = serverNames))
                         }
                     }
@@ -581,7 +585,7 @@ class LoggedInFlowNode(
             is NavTarget.CreateSpace -> {
                 val callback = object : CreateRoomEntryPoint.Callback {
                     override fun onRoomCreated(roomId: RoomId) {
-                        if (!ManagedFamilyConfig.isAllowedRoom(roomId)) return
+                        if (!isAllowedManagedRoom(roomId)) return
                         lifecycleScope.launch {
                             attachRoom(
                                 roomIdOrAlias = roomId.toRoomIdOrAlias(),
@@ -625,7 +629,7 @@ class LoggedInFlowNode(
                     buildContext = buildContext,
                     callback = object : RoomDirectoryEntryPoint.Callback {
                         override fun navigateToRoom(roomDescription: RoomDescription) {
-                            if (!ManagedFamilyConfig.isAllowedRoom(roomDescription.roomId)) return
+                            if (!isAllowedManagedRoom(roomDescription.roomId)) return
                             lifecycleScope.launch {
                                 attachRoom(
                                     roomIdOrAlias = roomDescription.roomId.toRoomIdOrAlias(),
@@ -676,6 +680,13 @@ class LoggedInFlowNode(
         }
     }
 
+    private fun isAllowedManagedRoom(roomId: RoomId): Boolean =
+        !ManagedFamilyConfig.ENABLED || roomId == assignedRoomId
+
+    private fun isAllowedManagedRoom(roomIdOrAlias: RoomIdOrAlias): Boolean =
+        !ManagedFamilyConfig.ENABLED ||
+            roomIdOrAlias is RoomIdOrAlias.Id && roomIdOrAlias.roomId == assignedRoomId
+
     suspend fun attachRoom(
         roomIdOrAlias: RoomIdOrAlias,
         serverNames: List<String> = emptyList(),
@@ -684,10 +695,10 @@ class LoggedInFlowNode(
         initialElement: RoomNavigationTarget = RoomNavigationTarget.Root(),
         clearBackstack: Boolean = false,
     ): RoomFlowNode {
-        check(ManagedFamilyConfig.isAllowedRoom(roomIdOrAlias)) {
-            "Managed family mode cannot open an unconfigured room"
+        if (!isAllowedManagedRoom(roomIdOrAlias)) {
+            Timber.w("Ignoring navigation to an unassigned room in managed family mode")
+            kotlinx.coroutines.awaitCancellation()
         }
-        managedFamilyCryptoReadiness.awaitReady()
         waitForNavTargetAttached { navTarget ->
             navTarget is NavTarget.Home
         }
@@ -776,23 +787,22 @@ class LoggedInFlowNode(
 
 internal fun shouldRejectManagedFamilyTarget(
     navTarget: LoggedInFlowNode.NavTarget,
-    isManagedCryptoReady: Boolean,
+    assignedRoomId: RoomId?,
 ): Boolean =
     ManagedFamilyConfig.ENABLED && when (navTarget) {
         is LoggedInFlowNode.NavTarget.Room ->
-            !isManagedCryptoReady || !ManagedFamilyConfig.isAllowedRoom(navTarget.roomIdOrAlias)
+            assignedRoomId == null || navTarget.roomIdOrAlias !is RoomIdOrAlias.Id || navTarget.roomIdOrAlias.roomId != assignedRoomId
         LoggedInFlowNode.NavTarget.CreateRoom,
         is LoggedInFlowNode.NavTarget.CreateSpace,
         is LoggedInFlowNode.NavTarget.IncomingShare,
         LoggedInFlowNode.NavTarget.RoomDirectory,
         is LoggedInFlowNode.NavTarget.UserProfile,
-        -> true
-        is LoggedInFlowNode.NavTarget.SecureBackup ->
-            navTarget.initialElement is SecureBackupEntryPoint.InitialTarget.ResetIdentity
+        is LoggedInFlowNode.NavTarget.SecureBackup,
         is LoggedInFlowNode.NavTarget.IncomingVerificationRequest,
         LoggedInFlowNode.NavTarget.Ftue,
-        LoggedInFlowNode.NavTarget.Home,
         LoggedInFlowNode.NavTarget.LinkNewDevice,
+        -> true
+        LoggedInFlowNode.NavTarget.Home,
         LoggedInFlowNode.NavTarget.LoggedInPermanent,
         LoggedInFlowNode.NavTarget.Placeholder,
         is LoggedInFlowNode.NavTarget.Settings,

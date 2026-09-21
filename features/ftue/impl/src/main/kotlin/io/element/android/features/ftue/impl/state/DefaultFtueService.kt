@@ -20,7 +20,6 @@ import io.element.android.libraries.core.coroutine.mapState
 import io.element.android.libraries.di.SessionScope
 import io.element.android.libraries.di.annotations.SessionCoroutineScope
 import io.element.android.libraries.matrix.api.encryption.EncryptionService
-import io.element.android.libraries.matrix.api.encryption.RecoveryState
 import io.element.android.libraries.matrix.api.verification.SessionVerificationService
 import io.element.android.libraries.matrix.api.verification.SessionVerifiedStatus
 import io.element.android.libraries.permissions.api.PermissionStateProvider
@@ -62,20 +61,25 @@ class DefaultFtueService(
         }
 
     init {
-        combine(
-            sessionVerificationService.sessionVerifiedStatus.onEach { sessionVerifiedStatus ->
-                if (sessionVerifiedStatus == SessionVerifiedStatus.NotVerified) {
-                    // Ensure we wait for the user to confirm the session verified screen before going further
-                    userNeedsToConfirmSessionVerificationSuccess.value = true
-                }
-            },
-            userNeedsToConfirmSessionVerificationSuccess,
-            encryptionService.recoveryStateStateFlow,
-            analyticsService.didAskUserConsentFlow.distinctUntilChanged(),
-        ) {
-            updateFtueStep()
+        if (ManagedFamilyConfig.ENABLED) {
+            // Managed family rooms are intentionally unencrypted. Do not start verification,
+            // recovery, secure-storage, or analytics-consent onboarding for this build.
+            ftueStepStateFlow.value = InternalFtueState.Complete
+        } else {
+            combine(
+                sessionVerificationService.sessionVerifiedStatus.onEach { sessionVerifiedStatus ->
+                    if (sessionVerifiedStatus == SessionVerifiedStatus.NotVerified) {
+                        // Ensure we wait for the user to confirm the session verified screen before going further
+                        userNeedsToConfirmSessionVerificationSuccess.value = true
+                    }
+                },
+                userNeedsToConfirmSessionVerificationSuccess,
+                analyticsService.didAskUserConsentFlow.distinctUntilChanged(),
+            ) { _, _, _ ->
+                updateFtueStep()
+            }
+                .launchIn(sessionCoroutineScope)
         }
-            .launchIn(sessionCoroutineScope)
     }
 
     fun updateFtueStep() = sessionCoroutineScope.launch {
@@ -95,10 +99,6 @@ class DefaultFtueService(
             }
             FtueStep.WaitingForInitialState -> if (isSessionNotVerified() || userNeedsToConfirmSessionVerificationSuccess.value) {
                 FtueStep.SessionVerification
-            } else if (needsRecoverySetup()) {
-                FtueStep.RecoverySetup
-            } else if (needsRecoveryKey()) {
-                FtueStep.RecoveryKeyEntry
             } else {
                 getNextStep(FtueStep.SessionVerification)
             }
@@ -124,22 +124,13 @@ class DefaultFtueService(
         }
 
     private fun isSessionVerificationStateReady(): Boolean {
-        if (sessionVerificationService.sessionVerifiedStatus.value == SessionVerifiedStatus.Unknown) return false
-        return !ManagedFamilyConfig.ENABLED || encryptionService.recoveryStateStateFlow.value.isKnown()
+        return sessionVerificationService.sessionVerifiedStatus.value != SessionVerifiedStatus.Unknown
     }
 
     private suspend fun isSessionNotVerified(): Boolean {
         return sessionVerificationService.sessionVerifiedStatus.value == SessionVerifiedStatus.NotVerified &&
-            (ManagedFamilyConfig.ENABLED || !canSkipVerification())
+            !canSkipVerification()
     }
-
-    private fun needsRecoverySetup(): Boolean =
-        ManagedFamilyConfig.ENABLED && encryptionService.recoveryStateStateFlow.value == RecoveryState.DISABLED
-
-    private fun needsRecoveryKey(): Boolean =
-        ManagedFamilyConfig.ENABLED && encryptionService.recoveryStateStateFlow.value == RecoveryState.INCOMPLETE
-
-    private fun RecoveryState.isKnown(): Boolean = this != RecoveryState.UNKNOWN && this != RecoveryState.WAITING_FOR_SYNC
 
     private suspend fun canSkipVerification(): Boolean {
         return sessionPreferencesStore.isSessionVerificationSkipped().first()

@@ -500,7 +500,7 @@ class RootFlowNode(
             is PermalinkData.FallbackLink -> Unit
             is PermalinkData.RoomEmailInviteLink -> Unit
             is PermalinkData.RoomLink -> {
-                if (!ManagedFamilyConfig.isAllowedRoom(permalinkData.roomIdOrAlias)) return
+                if (ManagedFamilyConfig.ENABLED) return
                 // If there is a thread id, focus on it in the main timeline
                 val focusedEventId = if (permalinkData.threadId != null) {
                     permalinkData.threadId?.asEventId()
@@ -533,7 +533,7 @@ class RootFlowNode(
             when (deeplinkData) {
                 is DeeplinkData.Root -> Unit // The room list will always be shown, observing FtueState
                 is DeeplinkData.Room -> {
-                    if (!ManagedFamilyConfig.isAllowedRoom(deeplinkData.roomId)) return
+                    if (ManagedFamilyConfig.ENABLED) return
                     loggedInFlowNode.attachRoom(
                         roomIdOrAlias = deeplinkData.roomId.toRoomIdOrAlias(),
                         initialElement = RoomNavigationTarget.Root(eventId = deeplinkData.threadId?.asEventId() ?: deeplinkData.eventId),
